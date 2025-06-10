@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+    <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>New Ticket
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    {% if current_user.role == 'intern' %}
+        <div class="col-md-3">
+            <div class="card bg-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                    <h4>{{ stats.assigned_tickets }}</h4>
+                    <p class="mb-0">Assigned Tickets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4>{{ stats.my_open_tickets }}</h4>
+                    <p class="mb-0">Open</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-spinner fa-2x mb-2"></i>
+                    <h4>{{ stats.my_in_progress }}</h4>
+                    <p class="mb-0">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-check fa-2x mb-2"></i>
+                    <h4>{{ stats.my_resolved }}</h4>
+                    <p class="mb-0">Resolved</p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-md-3">
+            <div class="card bg-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                    <h4>{{ stats.my_tickets }}</h4>
+                    <p class="mb-0">My Tickets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4>{{ stats.my_open }}</h4>
+                    <p class="mb-0">Open</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-spinner fa-2x mb-2"></i>
+                    <h4>{{ stats.my_in_progress }}</h4>
+                    <p class="mb-0">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <i class="fas fa-times fa-2x mb-2"></i>
+                    <h4>{{ stats.my_closed }}</h4>
+                    <p class="mb-0">Closed</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Recent Tickets -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-history me-2"></i>Recent Tickets
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if recent_tickets %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            {% if current_user.role == 'intern' %}
+                            <th>Created By</th>
+                            {% else %}
+                            <th>Assigned To</th>
+                            {% endif %}
+                            <th>Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in recent_tickets %}
+                        <tr>
+                            <td>#{{ ticket.id }}</td>
+                            <td>{{ ticket.title[:50] }}{% if ticket.title|length > 50 %}...{% endif %}</td>
+                            <td>
+                                <span class="badge {{ ticket.status|status_badge }}">
+                                    {{ ticket.status.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {{ ticket.priority|priority_badge }}">
+                                    {{ ticket.priority.title() }}
+                                </span>
+                            </td>
+                            {% if current_user.role == 'intern' %}
+                            <td>{{ ticket.creator.full_name }}</td>
+                            {% else %}
+                            <td>{{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}</td>
+                            {% endif %}
+                            <td>{{ ticket.updated_at|time_ago }}</td>
+                            <td>
+                                <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center">
+                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-2"></i>View All Tickets
+                </a>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No tickets found</h5>
+                <p class="text-muted">
+                    {% if current_user.role == 'user' %}
+                        You haven't created any tickets yet.
+                    {% else %}
+                        No tickets assigned to you yet.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Your First Ticket
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

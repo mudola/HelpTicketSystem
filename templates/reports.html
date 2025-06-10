@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-bar me-2"></i>Reports</h2>
+    <div class="btn-group">
+        <a href="{{ url_for('reports', days=7) }}" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
+        <a href="{{ url_for('reports', days=30) }}" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
+        <a href="{{ url_for('reports', days=90) }}" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary">
+            <div class="card-body text-center">
+                <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                <h4>{{ total_tickets }}</h4>
+                <p class="mb-0">Total Tickets</p>
+                <small>Last {{ days }} days</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success">
+            <div class="card-body text-center">
+                <i class="fas fa-check fa-2x mb-2"></i>
+                <h4>{{ closed_tickets }}</h4>
+                <p class="mb-0">Closed Tickets</p>
+                <small>{{ "%.1f"|format((closed_tickets / total_tickets * 100) if total_tickets > 0 else 0) }}% completion rate</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4>{{ "%.1f"|format(avg_resolution_time) if avg_resolution_time else 'N/A' }}</h4>
+                <p class="mb-0">Avg Resolution Time</p>
+                <small>Hours</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning">
+            <div class="card-body text-center">
+                <i class="fas fa-hourglass-half fa-2x mb-2"></i>
+                <h4>{{ total_tickets - closed_tickets }}</h4>
+                <p class="mb-0">Open/In Progress</p>
+                <small>Pending tickets</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Ticket Status Distribution -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Tickets by Status</h5>
+            </div>
+            <div class="card-body">
+                {% if status_stats %}
+                    <canvas id="statusChart"></canvas>
+                {% else %}
+                    <p class="text-center text-muted">No data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Priority Distribution -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Tickets by Priority</h5>
+            </div>
+            <div class="card-body">
+                {% if priority_stats %}
+                    <canvas id="priorityChart"></canvas>
+                {% else %}
+                    <p class="text-center text-muted">No data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Activity -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">User Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if user_activity %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Tickets Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in user_activity %}
+                                <tr>
+                                    <td>{{ activity.full_name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if activity.role == 'admin' else 'warning' if activity.role == 'intern' else 'secondary' }}">
+                                            {{ activity.role.title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ activity.tickets_created }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">No user activity data</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Intern Performance -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Intern Performance</h5>
+            </div>
+            <div class="card-body">
+                {% if intern_activity %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Intern</th>
+                                    <th>Tickets Assigned</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in intern_activity %}
+                                <tr>
+                                    <td>{{ activity.full_name }}</td>
+                                    <td>{{ activity.tickets_assigned }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">No intern activity data</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Status Chart
+{% if status_stats %}
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for stat in status_stats %}'{{ stat.status.replace("_", " ").title() }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for stat in status_stats %}{{ stat.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: [
+                '#0d6efd', // open - primary
+                '#ffc107', // in_progress - warning  
+                '#198754', // resolved - success
+                '#6c757d'  // closed - secondary
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+
+// Priority Chart
+{% if priority_stats %}
+const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+new Chart(priorityCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for stat in priority_stats %}'{{ stat.priority.title() }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Tickets',
+            data: [{% for stat in priority_stats %}{{ stat.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: [
+                '#6c757d', // low - secondary
+                '#ffc107', // medium - warning
+                '#dc3545', // high - danger
+                '#dc3545'  // urgent - danger
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

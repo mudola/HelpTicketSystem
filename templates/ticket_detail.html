@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket #{{ ticket.id }} - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Ticket Details -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-ticket-alt me-2"></i>Ticket #{{ ticket.id }}: {{ ticket.title }}
+                </h5>
+                <div>
+                    <span class="badge {{ ticket.status|status_badge }} me-2">
+                        {{ ticket.status.replace('_', ' ').title() }}
+                    </span>
+                    <span class="badge {{ ticket.priority|priority_badge }}">
+                        {{ ticket.priority.title() }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <div class="mt-2">{{ ticket.description|nl2br }}</div>
+                </div>
+                
+                {% if ticket.attachments %}
+                <div class="mb-3">
+                    <strong>Attachments:</strong>
+                    <ul class="list-unstyled mt-2">
+                        {% for attachment in ticket.attachments %}
+                        <li>
+                            <a href="{{ url_for('uploaded_file', filename=attachment.filename) }}" class="text-decoration-none">
+                                <i class="fas fa-paperclip me-2"></i>{{ attachment.original_filename }}
+                            </a>
+                            <small class="text-muted">({{ "%.1f"|format(attachment.file_size / 1024) }} KB)</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Created:</strong> {{ ticket.created_at|format_datetime }}<br>
+                            <strong>Created by:</strong> {{ ticket.creator.full_name }}<br>
+                            {% if ticket.category %}
+                            <strong>Category:</strong> {{ ticket.category.name }}<br>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Last updated:</strong> {{ ticket.updated_at|format_datetime }}<br>
+                            <strong>Assigned to:</strong> {{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}<br>
+                            {% if ticket.closed_at %}
+                            <strong>Closed:</strong> {{ ticket.closed_at|format_datetime }}<br>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comments -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Comments</h5>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                    {% for comment in comments %}
+                    <div class="border-start border-3 {% if comment.is_internal %}border-warning{% else %}border-primary{% endif %} ps-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ comment.author.full_name }}</strong>
+                                {% if comment.is_internal %}
+                                    <span class="badge bg-warning text-dark ms-2">Internal</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ comment.created_at|format_datetime }}</small>
+                        </div>
+                        <div class="mt-2">{{ comment.content|nl2br }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No comments yet.</p>
+                {% endif %}
+                
+                <!-- Add Comment Form -->
+                <hr>
+                <form method="POST" action="{{ url_for('add_comment', id=ticket.id) }}">
+                    {{ comment_form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ comment_form.content.label(class="form-label") }}
+                        {{ comment_form.content(class="form-control", rows="3") }}
+                    </div>
+                    
+                    {% if current_user.role in ['admin', 'intern'] %}
+                    <div class="mb-3 form-check">
+                        {{ comment_form.is_internal(class="form-check-input") }}
+                        {{ comment_form.is_internal.label(class="form-check-label") }}
+                        <div class="form-text">Internal comments are only visible to admin and interns.</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        {{ comment_form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                {% if current_user.role == 'user' and ticket.created_by_id == current_user.id and ticket.status != 'closed' %}
+                <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
+                        <i class="fas fa-times me-2"></i>Close Ticket
+                    </button>
+                </form>
+                {% endif %}
+                
+                {% if current_user.role == 'intern' and ticket.assigned_to_id == current_user.id and ticket.status != 'closed' %}
+                <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
+                        <i class="fas fa-times me-2"></i>Close Ticket
+                    </button>
+                </form>
+                {% endif %}
+                
+                {% if current_user.role == 'admin' and ticket.status != 'closed' %}
+                <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
+                        <i class="fas fa-times me-2"></i>Close Ticket
+                    </button>
+                </form>
+                {% endif %}
+                
+                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-list me-2"></i>Back to Tickets
+                </a>
+            </div>
+        </div>
+        
+        <!-- Update Ticket (Admin/Intern only) -->
+        {% if update_form and current_user.role in ['admin', 'intern'] %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Update Ticket</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_ticket', id=ticket.id) }}">
+                    {{ update_form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ update_form.status.label(class="form-label") }}
+                        {{ update_form.status(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ update_form.priority.label(class="form-label") }}
+                        {{ update_form.priority(class="form-control") }}
+                    </div>
+                    
+                    {% if current_user.role == 'admin' %}
+                    <div class="mb-3">
+                        {{ update_form.assigned_to_id.label(class="form-label") }}
+                        {{ update_form.assigned_to_id(class="form-control") }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        {{ update_form.submit(class="btn btn-warning") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-resize textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('#content');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    }
+});
+</script>
+{% endblock %}
