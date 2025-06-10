@@ -23,15 +23,6 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning">
-                <div class="card-body text-center">
-                    <i class="fas fa-clock fa-2x mb-2"></i>
-                    <h4>{{ stats.my_open_tickets }}</h4>
-                    <p class="mb-0">Open</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
             <div class="card bg-info">
                 <div class="card-body text-center">
                     <i class="fas fa-spinner fa-2x mb-2"></i>
@@ -46,6 +37,15 @@
                     <i class="fas fa-check fa-2x mb-2"></i>
                     <h4>{{ stats.my_resolved }}</h4>
                     <p class="mb-0">Resolved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <i class="fas fa-times fa-2x mb-2"></i>
+                    <h4>{{ stats.my_closed }}</h4>
+                    <p class="mb-0">Closed</p>
                 </div>
             </div>
         </div>

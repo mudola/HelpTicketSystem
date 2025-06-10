@@ -5,6 +5,135 @@ from sqlalchemy import func
 from app import mail, db
 from models import Ticket, User, Comment
 
+def get_dashboard_stats(user):
+    """Get dashboard statistics based on user role"""
+    stats = {}
+    
+    if user.role == 'admin':
+        # Admin sees all tickets
+        stats['total_tickets'] = Ticket.query.count()
+        stats['open_tickets'] = Ticket.query.filter_by(status='open').count()
+        stats['in_progress_tickets'] = Ticket.query.filter_by(status='in_progress').count()
+        stats['resolved_tickets'] = Ticket.query.filter_by(status='resolved').count()
+        stats['closed_tickets'] = Ticket.query.filter_by(status='closed').count()
+        
+        # For admin, also show tickets that are open but assigned (should be in_progress)
+        open_assigned = Ticket.query.filter(
+            Ticket.status == 'open',
+            Ticket.assigned_to_id.isnot(None)
+        ).count()
+        stats['open_tickets'] -= open_assigned
+        stats['in_progress_tickets'] += open_assigned
+        
+    elif user.role == 'intern':
+        # Intern sees assigned tickets
+        assigned_tickets = Ticket.query.filter_by(assigned_to_id=user.id)
+        stats['assigned_tickets'] = assigned_tickets.count()
+        
+        # Count by status, but treat open+assigned as in_progress
+        stats['my_open_tickets'] = assigned_tickets.filter(
+            Ticket.status == 'open',
+            Ticket.assigned_to_id.is_(None)
+        ).count()
+        
+        stats['my_in_progress'] = (
+            assigned_tickets.filter_by(status='in_progress').count() +
+            assigned_tickets.filter(
+                Ticket.status == 'open',
+                Ticket.assigned_to_id.isnot(None)
+            ).count()
+        )
+        
+        stats['my_resolved'] = assigned_tickets.filter_by(status='resolved').count()
+        stats['my_closed'] = assigned_tickets.filter_by(status='closed').count()
+        
+    else:  # user role
+        # User sees their own tickets
+        user_tickets = Ticket.query.filter_by(created_by_id=user.id)
+        stats['my_tickets'] = user_tickets.count()
+        
+        # For users, show actual status but consider assigned+open as in_progress
+        stats['my_open'] = user_tickets.filter(
+            Ticket.status == 'open',
+            Ticket.assigned_to_id.is_(None)
+        ).count()
+        
+        stats['my_in_progress'] = (
+            user_tickets.filter_by(status='in_progress').count() +
+            user_tickets.filter(
+                Ticket.status == 'open',
+                Ticket.assigned_to_id.isnot(None)
+            ).count()
+        )
+        
+        stats['my_resolved'] = user_tickets.filter_by(status='resolved').count()
+        stats['my_closed'] = user_tickets.filter_by(status='closed').count()
+    
+    return stats
+
+def send_notification_email(ticket, event_type):
+    """Send notification email for ticket events"""
+    try:
+        recipients = []
+        subject = ""
+        template = ""
+        
+        if event_type == 'new_ticket':
+            if ticket.assignee:
+                recipients.append(ticket.assignee.email)
+            subject = f"New Ticket Assigned: #{ticket.id} - {ticket.title}"
+            template = f"""
+            A new ticket has been assigned to you:
+            
+            Ticket ID: #{ticket.id}
+            Title: {ticket.title}
+            Priority: {ticket.priority}
+            Created by: {ticket.creator.full_name}
+            
+            Please log in to the helpdesk system to view details.
+            """
+            
+        elif event_type == 'ticket_updated':
+            recipients.append(ticket.creator.email)
+            if ticket.assignee and ticket.assignee.email != ticket.creator.email:
+                recipients.append(ticket.assignee.email)
+            subject = f"Ticket Updated: #{ticket.id} - {ticket.title}"
+            template = f"""
+            A ticket has been updated:
+            
+            Ticket ID: #{ticket.id}
+            Title: {ticket.title}
+            Status: {ticket.status}
+            Priority: {ticket.priority}
+            
+            Please log in to the helpdesk system to view details.
+            """
+            
+        elif event_type == 'new_comment':
+            recipients.append(ticket.creator.email)
+            if ticket.assignee and ticket.assignee.email != ticket.creator.email:
+                recipients.append(ticket.assignee.email)
+            subject = f"New Comment on Ticket: #{ticket.id} - {ticket.title}"
+            template = f"""
+            A new comment has been added to your ticket:
+            
+            Ticket ID: #{ticket.id}
+            Title: {ticket.title}
+            
+            Please log in to the helpdesk system to view the comment.
+            """
+        
+        if recipients:
+            msg = Message(
+                subject=subject,
+                recipients=recipients,
+                body=template
+            )
+            mail.send(msg)
+            
+    except Exception as e:
+        print(f"Failed to send email notification: {e}")
+
 def send_notification_email(ticket, event_type):
     """Send email notifications for ticket events"""
     try:

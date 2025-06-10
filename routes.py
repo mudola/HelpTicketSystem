@@ -140,13 +140,15 @@ def new_ticket():
     
     if form.validate_on_submit():
         # Create new ticket
+        assigned_to_id = form.assigned_to_id.data if form.assigned_to_id.data else None
         ticket = Ticket(
             title=form.title.data,
             description=form.description.data,
             priority=form.priority.data,
             created_by_id=current_user.id,
             category_id=form.category_id.data if form.category_id.data else None,
-            assigned_to_id=form.assigned_to_id.data if form.assigned_to_id.data else None
+            assigned_to_id=assigned_to_id,
+            status='in_progress' if assigned_to_id else 'open'
         )
         
         db.session.add(ticket)
@@ -267,7 +269,14 @@ def update_ticket(id):
         
         # Only admins can reassign tickets
         if current_user.role == 'admin':
+            old_assigned = ticket.assigned_to_id
             ticket.assigned_to_id = form.assigned_to_id.data if form.assigned_to_id.data else None
+            
+            # Auto-change status based on assignment
+            if ticket.assigned_to_id and not old_assigned and ticket.status == 'open':
+                ticket.status = 'in_progress'
+            elif not ticket.assigned_to_id and old_assigned and ticket.status == 'in_progress':
+                ticket.status = 'open'
         
         # Set closed_at timestamp if ticket is closed
         if form.status.data == 'closed' and old_status != 'closed':
