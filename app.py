@@ -65,7 +65,7 @@ with app.app_context():
     db.create_all()
     
     # Create default admin user if it doesn't exist
-    from models import User
+    from models import User, Category
     from werkzeug.security import generate_password_hash
     
     admin = User.query.filter_by(username='admin').first()
@@ -80,6 +80,23 @@ with app.app_context():
         db.session.add(admin_user)
         db.session.commit()
         print("Default admin user created (username: admin, password: admin123)")
+    
+    # Create default categories if they don't exist
+    default_categories = [
+        ('Hardware', 'Computer hardware, printers, peripherals'),
+        ('Software', 'Software installation, updates, licensing'),
+        ('Network', 'Internet connectivity, WiFi, network access'),
+        ('Email', 'Email setup, issues, and configuration'),
+        ('Security', 'Password resets, account access, security concerns'),
+        ('Other', 'General ICT support requests')
+    ]
+    
+    for cat_name, cat_desc in default_categories:
+        if not Category.query.filter_by(name=cat_name).first():
+            category = Category(name=cat_name, description=cat_desc)
+            db.session.add(category)
+    
+    db.session.commit()
 
 # Import routes
 import routes

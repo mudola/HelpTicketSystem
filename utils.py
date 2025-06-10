@@ -139,11 +139,18 @@ def time_ago(dt):
         return "Just now"
 
 # Template filters
+def nl2br(value):
+    """Convert newlines to HTML line breaks"""
+    if not value:
+        return value
+    return value.replace('\n', '<br>')
+
 def register_template_filters(app):
     app.jinja_env.filters['priority_badge'] = get_priority_badge_class
     app.jinja_env.filters['status_badge'] = get_status_badge_class
     app.jinja_env.filters['format_datetime'] = format_datetime
     app.jinja_env.filters['time_ago'] = time_ago
+    app.jinja_env.filters['nl2br'] = nl2br
 
 # Register filters
 from app import app as flask_app

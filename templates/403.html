@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="py-5">
+            <i class="fas fa-lock fa-5x text-danger mb-4"></i>
+            <h1 class="display-4 mb-3">403</h1>
+            <h2 class="mb-3">Access Denied</h2>
+            <p class="lead mb-4">
+                You don't have permission to access this page or resource.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-2"></i>Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

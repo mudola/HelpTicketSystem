@@ -153,25 +153,29 @@ def new_ticket():
         db.session.flush()  # Get the ticket ID
         
         # Handle file upload
-        if form.attachments.data:
+        if form.attachments.data and form.attachments.data.filename:
             file = form.attachments.data
             filename = secure_filename(file.filename)
             if filename:
-                # Generate unique filename
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                filename = f"{timestamp}_{filename}"
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-                
-                attachment = Attachment(
-                    filename=filename,
-                    original_filename=file.filename,
-                    file_size=os.path.getsize(file_path),
-                    content_type=file.content_type,
-                    ticket_id=ticket.id,
-                    uploaded_by_id=current_user.id
-                )
-                db.session.add(attachment)
+                try:
+                    # Generate unique filename
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{filename}"
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(file_path)
+                    
+                    attachment = Attachment(
+                        filename=filename,
+                        original_filename=file.filename,
+                        file_size=os.path.getsize(file_path),
+                        content_type=file.content_type,
+                        ticket_id=ticket.id,
+                        uploaded_by_id=current_user.id
+                    )
+                    db.session.add(attachment)
+                except Exception as e:
+                    flash(f'Error uploading file: {str(e)}', 'danger')
+                    return render_template('ticket_form.html', form=form, title='New Ticket')
         
         db.session.commit()
         
