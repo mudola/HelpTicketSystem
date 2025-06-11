@@ -76,3 +76,11 @@ class CategoryForm(FlaskForm):
     name = StringField('Category Name', validators=[DataRequired(), Length(max=50)])
     description = StringField('Description', validators=[Length(max=200)])
     submit = SubmitField('Add Category')
+
+class AdminUserForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    full_name = StringField('Full Name', validators=[DataRequired(), Length(max=100)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    role = SelectField('Role', choices=[('user', 'User'), ('intern', 'Intern'), ('admin', 'Admin')], default='user')
+    submit = SubmitField('Create User')

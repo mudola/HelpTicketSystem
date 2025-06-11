@@ -9,7 +9,7 @@ from flask_mail import Message
 
 from app import app, db, mail
 from models import User, Ticket, Comment, Attachment, Category
-from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm
+from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm, AdminUserForm
 from utils import send_notification_email, get_dashboard_stats
 
 @app.route('/')
@@ -396,11 +396,12 @@ def user_management():
 
     users = User.query.all()
     form = UserManagementForm()
+    admin_user_form = AdminUserForm()
     category_form = CategoryForm()
     categories = Category.query.all()
 
     return render_template('user_management.html', users=users, form=form, 
-                         category_form=category_form, categories=categories)
+                         admin_user_form=admin_user_form, category_form=category_form, categories=categories)
 
 @app.route('/admin/users/update_password', methods=['POST'])
 @login_required
@@ -438,6 +439,76 @@ def add_category():
             db.session.commit()
             flash('Category added successfully', 'success')
 
+    return redirect(url_for('user_management'))
+
+@app.route('/admin/users/create', methods=['POST'])
+@login_required
+def create_user():
+    if current_user.role != 'admin':
+        abort(403)
+
+    form = AdminUserForm()
+    if form.validate_on_submit():
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=form.username.data).first()
+        if existing_user:
+            flash('Username already exists', 'danger')
+            return redirect(url_for('user_management'))
+
+        # Check if email already exists
+        existing_email = User.query.filter_by(email=form.email.data).first()
+        if existing_email:
+            flash('Email already registered', 'danger')
+            return redirect(url_for('user_management'))
+
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            full_name=form.full_name.data,
+            password_hash=generate_password_hash(form.password.data),
+            role=form.role.data
+        )
+        db.session.add(user)
+        db.session.commit()
+        flash(f'User {user.full_name} created successfully', 'success')
+
+    return redirect(url_for('user_management'))
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if current_user.role != 'admin':
+        abort(403)
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent admin from deleting themselves
+    if user.id == current_user.id:
+        flash('You cannot delete your own account', 'danger')
+        return redirect(url_for('user_management'))
+    
+    # Update tickets created by this user to show deleted user
+    tickets_created = Ticket.query.filter_by(created_by_id=user_id).all()
+    for ticket in tickets_created:
+        ticket.created_by_id = None
+    
+    # Update tickets assigned to this user
+    tickets_assigned = Ticket.query.filter_by(assigned_to_id=user_id).all()
+    for ticket in tickets_assigned:
+        ticket.assigned_to_id = None
+        if ticket.status == 'in_progress':
+            ticket.status = 'open'
+    
+    # Update comments by this user
+    comments = Comment.query.filter_by(author_id=user_id).all()
+    for comment in comments:
+        comment.author_id = None
+    
+    # Delete the user
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f'User {user.full_name} deleted successfully', 'success')
     return redirect(url_for('user_management'))
 
 @app.route('/uploads/<filename>')

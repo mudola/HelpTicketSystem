@@ -73,8 +73,49 @@
         </div>
     </div>
 
-    <!-- Categories Management -->
+    <!-- Add New User -->
     <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Add New User</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_user') }}">
+                    {{ admin_user_form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ admin_user_form.username.label(class="form-label") }}
+                        {{ admin_user_form.username(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ admin_user_form.email.label(class="form-label") }}
+                        {{ admin_user_form.email(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ admin_user_form.full_name.label(class="form-label") }}
+                        {{ admin_user_form.full_name(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ admin_user_form.password.label(class="form-label") }}
+                        {{ admin_user_form.password(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ admin_user_form.role.label(class="form-label") }}
+                        {{ admin_user_form.role(class="form-control") }}
+                    </div>
+
+                    <div class="d-grid">
+                        {{ admin_user_form.submit(class="btn btn-success") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Categories Management -->
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Add Category</h5>

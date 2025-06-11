@@ -44,7 +44,7 @@ class Ticket(db.Model):
     closed_at = db.Column(db.DateTime)
     
     # Foreign Keys
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Allow null for deleted users
     assigned_to_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     
@@ -63,7 +63,7 @@ class Comment(db.Model):
     
     # Foreign Keys
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Allow null for deleted users
 
     def __repr__(self):
         return f'<Comment {self.id} on Ticket {self.ticket_id}>'
