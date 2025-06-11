@@ -112,21 +112,8 @@ function formatFileSize(bytes) {
 }
 
 function refreshTicketStatus() {
-    // This would typically make an AJAX call to get updated ticket status
-    // For now, we'll just reload the page if there are any updates
-    const ticketId = window.location.pathname.split('/').pop();
-    if (ticketId && !isNaN(ticketId)) {
-        fetch(`/api/ticket/${ticketId}/status`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.updated) {
-                    // Show notification that ticket has been updated
-                    showNotification('Ticket has been updated by another user. Refreshing...', 'info');
-                    setTimeout(() => window.location.reload(), 2000);
-                }
-            })
-            .catch(error => console.log('Status check failed:', error));
-    }
+    // Placeholder for future real-time status updates
+    // Currently disabled to prevent console errors
 }
 
 function showNotification(message, type = 'info') {

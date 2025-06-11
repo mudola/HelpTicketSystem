@@ -455,6 +455,25 @@ def uploaded_file(filename):
 
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/ticket/<int:ticket_id>/delete', methods=['POST'])
+@login_required
+def delete_ticket(ticket_id):
+    if current_user.role != 'admin':
+        abort(403)
+    
+    ticket = Ticket.query.get_or_404(ticket_id)
+    
+    # Delete associated comments and attachments
+    Comment.query.filter_by(ticket_id=ticket_id).delete()
+    Attachment.query.filter_by(ticket_id=ticket_id).delete()
+    
+    # Delete the ticket
+    db.session.delete(ticket)
+    db.session.commit()
+    
+    flash('Ticket deleted successfully', 'success')
+    return redirect(url_for('tickets_list'))
+
 @app.errorhandler(403)
 def forbidden(error):
     return render_template('403.html'), 403
