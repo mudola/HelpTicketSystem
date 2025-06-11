@@ -314,6 +314,81 @@ def close_ticket(id):
     flash('Ticket closed successfully', 'success')
     return redirect(url_for('ticket_detail', id=id))
 
+@app.route('/reports/pdf')
+@login_required
+def reports_pdf():
+    if current_user.role != 'admin':
+        abort(403)
+    
+    # Get same data as regular reports
+    days = request.args.get('days', 30, type=int)
+    start_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Ticket statistics
+    total_tickets = Ticket.query.filter(Ticket.created_at >= start_date).count()
+    closed_tickets = Ticket.query.filter(
+        Ticket.created_at >= start_date,
+        Ticket.status == 'closed'
+    ).count()
+    
+    # Activity by user
+    user_activity = db.session.query(
+        User.full_name,
+        User.role,
+        func.count(Ticket.id).label('tickets_created')
+    ).join(Ticket, User.id == Ticket.created_by_id)\
+     .filter(Ticket.created_at >= start_date)\
+     .group_by(User.id, User.full_name, User.role)\
+     .all()
+    
+    # Intern activity
+    intern_activity = db.session.query(
+        User.full_name,
+        func.count(Ticket.id).label('tickets_assigned')
+    ).join(Ticket, User.id == Ticket.assigned_to_id)\
+     .filter(Ticket.created_at >= start_date, User.role == 'intern')\
+     .group_by(User.id, User.full_name)\
+     .all()
+    
+    # Tickets by status
+    status_stats = db.session.query(
+        Ticket.status,
+        func.count(Ticket.id).label('count')
+    ).filter(Ticket.created_at >= start_date)\
+     .group_by(Ticket.status)\
+     .all()
+    
+    # Tickets by priority
+    priority_stats = db.session.query(
+        Ticket.priority,
+        func.count(Ticket.id).label('count')
+    ).filter(Ticket.created_at >= start_date)\
+     .group_by(Ticket.priority)\
+     .all()
+    
+    # Average resolution time
+    resolved_tickets = Ticket.query.filter(
+        Ticket.created_at >= start_date,
+        Ticket.status.in_(['resolved', 'closed']),
+        Ticket.closed_at.isnot(None)
+    ).all()
+    
+    avg_resolution_time = None
+    if resolved_tickets:
+        total_time = sum([(t.closed_at - t.created_at).total_seconds() for t in resolved_tickets])
+        avg_resolution_time = total_time / len(resolved_tickets) / 3600  # in hours
+    
+    return render_template('reports_pdf.html',
+                         total_tickets=total_tickets,
+                         closed_tickets=closed_tickets,
+                         user_activity=user_activity,
+                         intern_activity=intern_activity,
+                         status_stats=status_stats,
+                         priority_stats=priority_stats,
+                         avg_resolution_time=avg_resolution_time,
+                         days=days,
+                         generated_date=datetime.utcnow())
+
 @app.route('/reports')
 @login_required
 def reports():

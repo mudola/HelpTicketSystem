@@ -5,10 +5,28 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-chart-bar me-2"></i>Reports</h2>
-    <div class="btn-group">
-        <a href="{{ url_for('reports', days=7) }}" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
-        <a href="{{ url_for('reports', days=30) }}" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
-        <a href="{{ url_for('reports', days=90) }}" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
+    <div class="d-flex gap-2">
+        <div class="btn-group">
+            <a href="{{ url_for('reports', days=7) }}" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
+            <a href="{{ url_for('reports', days=30) }}" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
+            <a href="{{ url_for('reports', days=90) }}" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
+        </div>
+        <button onclick="printReport()" class="btn btn-primary">
+            <i class="fas fa-print me-1"></i>Print Report
+        </button>
+        <a href="{{ url_for('reports_pdf', days=days) }}" target="_blank" class="btn btn-success">
+            <i class="fas fa-file-pdf me-1"></i>PDF Version
+        </a>
+    </div>
+</div>
+
+<!-- Print Header (visible only when printing) -->
+<div class="d-none d-print-block mb-4">
+    <div class="text-center">
+        <h1>ICT Helpdesk System Report</h1>
+        <p><strong>Report Period:</strong> Last {{ days }} days</p>
+        <p><strong>Generated:</strong> {{ moment().format('MMMM Do YYYY, h:mm:ss a') }}</p>
+        <hr>
     </div>
 </div>
 
@@ -166,7 +184,71 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+@media print {
+    /* Hide navigation and print button when printing */
+    .navbar, .btn, .no-print {
+        display: none !important;
+    }
+    
+    /* Ensure proper page breaks */
+    .card {
+        break-inside: avoid;
+        margin-bottom: 20px;
+    }
+    
+    /* Better table printing */
+    table {
+        width: 100% !important;
+        font-size: 12px;
+    }
+    
+    /* Chart containers for print */
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Print header */
+    body::before {
+        content: "ICT Helpdesk Report - Generated on {{ datetime.now().strftime('%Y-%m-%d %H:%M') }}";
+        display: block;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 20px;
+        padding: 10px;
+        border-bottom: 2px solid #000;
+    }
+    
+    /* Adjust colors for print */
+    .card {
+        border: 1px solid #000 !important;
+    }
+    
+    .bg-primary, .bg-success, .bg-info, .bg-warning {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+    }
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function printReport() {
+    // Hide elements that shouldn't be printed
+    const elementsToHide = document.querySelectorAll('.btn, .navbar');
+    elementsToHide.forEach(el => el.classList.add('no-print'));
+    
+    // Print the page
+    window.print();
+    
+    // Restore hidden elements after printing
+    setTimeout(() => {
+        elementsToHide.forEach(el => el.classList.remove('no-print'));
+    }, 1000);
+}
+</script>
 <script>
 // Status Chart
 {% if status_stats %}
