@@ -461,7 +461,8 @@ def reports():
                          status_stats=status_stats,
                          priority_stats=priority_stats,
                          avg_resolution_time=avg_resolution_time,
-                         days=days)
+                         days=days,
+                         datetime=datetime)
 
 @app.route('/admin/users')
 @login_required
