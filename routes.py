@@ -198,7 +198,7 @@ def ticket_detail(id):
     # Check permissions
     if current_user.role == 'user' and ticket.created_by_id != current_user.id:
         abort(403)
-    elif current_user.role == 'intern' and ticket.assigned_to_id != current_user.id:
+    elif current_user.role == 'intern' and ticket.assigned_to_id != current_user.id and ticket.created_by_id != current_user.id:
         abort(403)
     
     # Get comments based on user role
@@ -221,7 +221,7 @@ def add_comment(id):
     # Check permissions
     if current_user.role == 'user' and ticket.created_by_id != current_user.id:
         abort(403)
-    elif current_user.role == 'intern' and ticket.assigned_to_id != current_user.id:
+    elif current_user.role == 'intern' and ticket.assigned_to_id != current_user.id and ticket.created_by_id != current_user.id:
         abort(403)
     
     form = CommentForm()
