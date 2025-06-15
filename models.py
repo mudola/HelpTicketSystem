@@ -1,5 +1,5 @@
 from datetime import datetime
-from app import db
+from extensions import db
 from flask_login import UserMixin
 from sqlalchemy import Text
 
@@ -12,7 +12,9 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default='user')  # admin, intern, user
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
-    
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(128), nullable=True)
+
     # Relationships
     tickets_created = db.relationship('Ticket', foreign_keys='Ticket.created_by_id', backref='creator', lazy='dynamic')
     tickets_assigned = db.relationship('Ticket', foreign_keys='Ticket.assigned_to_id', backref='assignee', lazy='dynamic')
@@ -26,7 +28,7 @@ class Category(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     description = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     tickets = db.relationship('Ticket', backref='category', lazy='dynamic')
 
@@ -35,35 +37,35 @@ class Category(db.Model):
 
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
+    location = db.Column(db.String(200), nullable=False)
     description = db.Column(Text, nullable=False)
     status = db.Column(db.String(20), nullable=False, default='open')  # open, in_progress, resolved, closed
     priority = db.Column(db.String(20), nullable=False, default='medium')  # low, medium, high, urgent
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     closed_at = db.Column(db.DateTime)
-    
+
     # Foreign Keys
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Allow null for deleted users
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     assigned_to_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
-    
+
     # Relationships
     comments = db.relationship('Comment', backref='ticket', lazy='dynamic', cascade='all, delete-orphan')
     attachments = db.relationship('Attachment', backref='ticket', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<Ticket {self.id}: {self.title}>'
+        return f'<Ticket {self.id}: {self.location}>'
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(Text, nullable=False)
-    is_internal = db.Column(db.Boolean, default=False)  # Internal comments between admin and interns
+    is_internal = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Foreign Keys
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Allow null for deleted users
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
     def __repr__(self):
         return f'<Comment {self.id} on Ticket {self.ticket_id}>'
@@ -75,11 +77,11 @@ class Attachment(db.Model):
     file_size = db.Column(db.Integer)
     content_type = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Foreign Keys
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
     uploaded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
+
     # Relationships
     uploaded_by = db.relationship('User', backref='attachments')
 

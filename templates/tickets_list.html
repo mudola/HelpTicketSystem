@@ -55,7 +55,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Title</th>
+                            <th>Location</th>
                             <th>Status</th>
                             <th>Priority</th>
                             {% if current_user.role == 'admin' %}
@@ -81,7 +81,7 @@
                             <td>#{{ ticket.id }}</td>
                             <td>
                                 <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="text-decoration-none">
-                                    {{ ticket.title[:50] }}{% if ticket.title|length > 50 %}...{% endif %}
+                                    {{ ticket.location[:50] if ticket.location else ticket.title[:50] }}{% if (ticket.location and ticket.location|length > 50) or (not ticket.location and ticket.title|length > 50) %}...{% endif %}
                                 </a>
                             </td>
                             <td>

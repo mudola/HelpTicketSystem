@@ -14,7 +14,7 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark footer-sky">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
                 <i class="fas fa-headset me-2"></i>ICT Helpdesk
@@ -93,9 +93,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light py-3 mt-5">
+    <footer class="footer-sky text-light py-3 mt-5">
         <div class="container text-center">
-            <p>&copy; 2024 ICT Helpdesk System. All rights reserved.</p>
+            <p>&copy; {{ current_year }} ICT Helpdesk System. All rights reserved.</p>
         </div>
     </footer>
 

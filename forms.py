@@ -1,4 +1,4 @@
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, SelectField, PasswordField, SubmitField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional
@@ -16,11 +16,11 @@ class RegistrationForm(FlaskForm):
     full_name = StringField('Full Name', validators=[DataRequired(), Length(max=100)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
-    role = SelectField('Role', choices=[('user', 'User'), ('intern', 'Intern')], default='user')
+    role = SelectField('Role', choices=[('user', 'User'), ('intern', 'Intern'), ], default='user')
     submit = SubmitField('Register')
 
 class TicketForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired(), Length(max=200)])
+    location = StringField('Location', validators=[DataRequired(), Length(max=200)])
     description = TextAreaField('Description', validators=[DataRequired()])
     category_id = SelectField('Category', coerce=int, validators=[Optional()])
     priority = SelectField('Priority', choices=[

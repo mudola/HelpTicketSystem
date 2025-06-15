@@ -14,10 +14,10 @@
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-3">
-                        {{ form.title.label(class="form-label") }}
-                        {{ form.title(class="form-control") }}
-                        {% if form.title.errors %}
-                            {% for error in form.title.errors %}
+                        {{ form.location.label(class="form-label") }}
+                        {{ form.location(class="form-control") }}
+                        {% if form.location.errors %}
+                            {% for error in form.location.errors %}
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         {% endif %}

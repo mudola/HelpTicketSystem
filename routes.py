@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, desc
 from flask_mail import Message
+import pytz
+import uuid
 
 from app import app, db, mail
 from models import User, Ticket, Comment, Attachment, Category
@@ -41,6 +43,18 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/verify/<token>')
+def verify_email(token):
+    user = User.query.filter_by(verification_token=token).first_or_404()
+    if user.is_verified:
+        flash('Account already verified. Please login.', 'info')
+    else:
+        user.is_verified = True
+        user.verification_token = None
+        db.session.commit()
+        flash('Your email has been verified. You can now login.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
@@ -57,16 +71,27 @@ def register():
             flash('Email already registered', 'danger')
             return render_template('register.html', form=form)
 
+        # Generate verification token
+        token = str(uuid.uuid4())
         user = User(
             username=form.username.data,
             email=form.email.data,
             full_name=form.full_name.data,
             password_hash=generate_password_hash(form.password.data),
-            role=form.role.data
+            role=form.role.data,
+            is_verified=False,
+            verification_token=token
         )
         db.session.add(user)
         db.session.commit()
-        flash('Registration successful', 'success')
+
+        # Send verification email
+        verify_url = url_for('verify_email', token=token, _external=True)
+        msg = Message('Verify Your Email - ICT Helpdesk', recipients=[user.email])
+        msg.body = f"Hello {user.full_name},\n\nPlease verify your email by clicking the link below:\n{verify_url}\n\nIf you did not register, please ignore this email."
+        mail.send(msg)
+
+        flash('Registration successful! Please check your email to verify your account.', 'info')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
@@ -141,14 +166,28 @@ def new_ticket():
     if form.validate_on_submit():
         # Create new ticket
         assigned_to_id = form.assigned_to_id.data if form.assigned_to_id.data else None
+        # Limit: Only 1 active (open/in_progress) ticket per intern/technician
+        if assigned_to_id:
+            active_task_count = Ticket.query.filter(
+                Ticket.assigned_to_id == assigned_to_id,
+                Ticket.status.in_(['open', 'in_progress'])
+            ).count()
+            if active_task_count >= 1:
+                flash('This technician/intern already has an active task assigned. Only 1 active task is allowed at a time.', 'danger')
+                return render_template('ticket_form.html', form=form, title='New Ticket')
+
+        nairobi_tz = pytz.timezone('Africa/Nairobi')
+        now_nairobi = datetime.now(nairobi_tz)
         ticket = Ticket(
-            title=form.title.data,
+            location=form.location.data,
             description=form.description.data,
             priority=form.priority.data,
             created_by_id=current_user.id,
             category_id=form.category_id.data if form.category_id.data else None,
             assigned_to_id=assigned_to_id,
-            status='in_progress' if assigned_to_id else 'open'
+            status='in_progress' if assigned_to_id else 'open',
+            created_at=now_nairobi,
+            updated_at=now_nairobi
         )
 
         db.session.add(ticket)
@@ -271,8 +310,19 @@ def update_ticket(id):
 
         # Only admins can reassign tickets
         if current_user.role == 'admin':
+            # Prevent assigning if intern/technician already has an active task
+            new_assigned_id = form.assigned_to_id.data if form.assigned_to_id.data else None
+            if new_assigned_id and new_assigned_id != ticket.assigned_to_id:
+                active_task_count = Ticket.query.filter(
+                    Ticket.assigned_to_id == new_assigned_id,
+                    Ticket.status.in_(['open', 'in_progress']),
+                    Ticket.id != ticket.id
+                ).count()
+                if active_task_count >= 1:
+                    flash('This technician/intern already has an active task assigned. Only 1 active task is allowed at a time.', 'danger')
+                    return render_template('ticket_detail.html', ticket=ticket, comments=Comment.query.filter_by(ticket_id=id).all(), comment_form=CommentForm(), update_form=form)
             old_assigned = ticket.assigned_to_id
-            ticket.assigned_to_id = form.assigned_to_id.data if form.assigned_to_id.data else None
+            ticket.assigned_to_id = new_assigned_id
 
             # Auto-change status based on assignment
             if ticket.assigned_to_id and not old_assigned and ticket.status == 'open':

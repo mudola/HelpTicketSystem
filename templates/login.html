@@ -3,17 +3,24 @@
 {% block title %}Login - ICT Helpdesk{% endblock %}
 
 {% block content %}
+<body class="login-bg">
 <div class="row justify-content-center">
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header text-center">
-                <h4><i class="fas fa-sign-in-alt me-2"></i>Login</h4>
+        <div class="card login-card text-center">
+            <div class="login-brand-header mt-4">
+                <i class="fas fa-headset fa-2x"></i>
+                <h2>ICT Helpdesk</h2>
             </div>
+            <div class="login-avatar-container mb-3">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User Avatar" class="login-avatar">
+            </div>
+           <!-- <div class="card-header login-card-header">
+                <h4><i class="fas fa-sign-in-alt me-2"></i>Sign In</h4>
+            </div> -->
             <div class="card-body">
                 <form method="POST">
                     {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
+                    <div class="mb-3 text-start">
                         {{ form.username.label(class="form-label") }}
                         {{ form.username(class="form-control") }}
                         {% if form.username.errors %}
@@ -22,8 +29,7 @@
                             {% endfor %}
                         {% endif %}
                     </div>
-                    
-                    <div class="mb-3">
+                    <div class="mb-3 text-start">
                         {{ form.password.label(class="form-label") }}
                         {{ form.password(class="form-control") }}
                         {% if form.password.errors %}
@@ -32,14 +38,12 @@
                             {% endfor %}
                         {% endif %}
                     </div>
-                    
-                    <div class="mb-3 form-check">
+                    <div class="mb-3 form-check text-start">
                         {{ form.remember_me(class="form-check-input") }}
                         {{ form.remember_me.label(class="form-check-label") }}
                     </div>
-                    
                     <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary") }}
+                        {{ form.submit(class="btn btn-primary login-btn") }}
                     </div>
                 </form>
             </div>
@@ -49,4 +53,5 @@
         </div>
     </div>
 </div>
+</body>
 {% endblock %}

@@ -1,29 +1,20 @@
 import os
 import logging
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_mail import Mail
-from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
+from extensions import db, login_manager, mail
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
-login_manager = LoginManager()
-mail = Mail()
-
 # Create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost:3306/helpticket_system"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -59,15 +50,15 @@ def load_user(user_id):
 # Create upload directory
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Initialize the database and create tables
 with app.app_context():
-    # Import models to ensure tables are created
     import models
-    db.create_all()
-    
-    # Create default admin user if it doesn't exist
+    db.create_all()  # Creates tables in the helpticket_system database
+
+    # Create a default admin user
     from models import User, Category
     from werkzeug.security import generate_password_hash
-    
+
     admin = User.query.filter_by(username='admin').first()
     if not admin:
         admin_user = User(
@@ -80,8 +71,8 @@ with app.app_context():
         db.session.add(admin_user)
         db.session.commit()
         print("Default admin user created (username: admin, password: admin123)")
-    
-    # Create default categories if they don't exist
+
+    # Create default categories
     default_categories = [
         ('Hardware', 'Computer hardware, printers, peripherals'),
         ('Software', 'Software installation, updates, licensing'),
@@ -90,13 +81,17 @@ with app.app_context():
         ('Security', 'Password resets, account access, security concerns'),
         ('Other', 'General ICT support requests')
     ]
-    
+
     for cat_name, cat_desc in default_categories:
         if not Category.query.filter_by(name=cat_name).first():
             category = Category(name=cat_name, description=cat_desc)
             db.session.add(category)
-    
+
     db.session.commit()
+
+@app.context_processor
+def inject_now():
+    return {'current_year': datetime.now().year}
 
 # Import routes
 import routes
