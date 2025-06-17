@@ -1,16 +1,27 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 
 # Create the Flask app
 app = Flask(__name__)
 
-# Define a route
+# Define the home route
 @app.route("/")
 def home():
-    return "Hello, Render!"
+    # Render the main system page (ensure `templates/index.html` exists)
+    return render_template("index.html")
+
+# Additional routes for your system
+@app.route("/login")
+def login():
+    # Render the login page (ensure `templates/login.html` exists)
+    return render_template("login.html")
+
+@app.route("/dashboard")
+def dashboard():
+    # Render the dashboard page (ensure `templates/dashboard.html` exists)
+    return render_template("dashboard.html")
 
 # Run the app
 if __name__ == "__main__":
-    # Use the port provided by Render or default to 8000 for local testing
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
