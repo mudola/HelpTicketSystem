@@ -15,6 +15,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://sql8785118:ZzV7IVGefP@sql8.freesqldatabase.com:3306/sql8785118'
+#["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost:3306/helpticket_system"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
