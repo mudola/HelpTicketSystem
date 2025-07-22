@@ -1,38 +1,158 @@
+
 {% extends "base.html" %}
 
 {% block title %}Login - ICT Helpdesk{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center align-items-center" style="min-height: 90vh;">
-    <div class="col-md-4 text-center">
-        <img src="{{ url_for('static', filename='uploads/download.jpeg') }}" alt="ICT Helpdesk Logo" class="mb-4" style="width: 100px;">
-        <h5 class="mb-4 text-muted">User Login</h5>
-        <form method="POST" class="mt-4">
-            {{ form.hidden_tag() }}
-            <div class="mb-3">
-                {{ form.username(class="form-control text-center", placeholder="Username") }}
-                {% if form.username.errors %}
-                    {% for error in form.username.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                {% endif %}
+<div class="login-wrapper">
+    <div class="login-background">
+        <div class="login-overlay"></div>
+    </div>
+    
+    <div class="container-fluid h-100">
+        <div class="row h-100 align-items-center justify-content-center">
+            <div class="col-lg-4 col-md-6 col-sm-8">
+                <div class="login-card card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <!-- Logo Section -->
+                        <div class="text-center mb-4">
+                            <div class="login-logo-container">
+                                <img src="{{ url_for('static', filename='uploads/download.jpeg') }}" 
+                                     alt="ICT Helpdesk Logo" 
+                                     class="login-logo">
+                            </div>
+                            <h3 class="login-title mt-3 mb-1">Welcome Back</h3>
+                            <p class="login-subtitle text-muted">Sign in to your ICT Helpdesk account</p>
+                        </div>
+
+                        <!-- Login Form -->
+                        <form method="POST" class="login-form">
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="form-floating mb-3">
+                                {{ form.username(class="form-control login-input", placeholder="Payroll Number", id="floatingUsername") }}
+                                <label for="floatingUsername">
+                                    <i class="fas fa-user me-2"></i>Payroll Number
+                                </label>
+                                {% if form.username.errors %}
+                                    {% for error in form.username.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="form-floating mb-4">
+                                {{ form.password(class="form-control login-input", placeholder="Password", id="floatingPassword") }}
+                                <label for="floatingPassword">
+                                    <i class="fas fa-lock me-2"></i>Password
+                                </label>
+                                <span class="password-toggle" onclick="togglePassword()">
+                                    <i class="fas fa-eye" id="toggleIcon"></i>
+                                </span>
+                                {% if form.password.errors %}
+                                    {% for error in form.password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    {{ form.remember_me(class="form-check-input", id="rememberMe") }}
+                                    <label class="form-check-label" for="rememberMe">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <a href="#" class="forgot-password-link">
+                                    Forgot password?
+                                </a>
+                            </div>
+
+                            <div class="d-grid gap-2 mb-4">
+                                {{ form.submit(class="btn btn-primary btn-lg login-btn") }}
+                                <a href="/" class="btn btn-outline-secondary btn-lg">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Home
+                                </a>
+                            </div>
+                        </form>
+
+                        <!-- Divider -->
+                        <div class="login-divider">
+                            <span>OR</span>
+                        </div>
+
+                        <!-- Register Link -->
+                        <div class="text-center">
+                            <p class="register-text">
+                                Don't have an account? 
+                                <a href="{{ url_for('register') }}" class="register-link">
+                                    Create one here
+                                </a>
+                            </p>
+                        </div>
+
+                        <!-- Help Section -->
+                        <div class="login-help text-center mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-question-circle me-1"></i>
+                                Need help? Contact IT Support
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Section -->
+                <div class="login-features mt-4">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="feature-item">
+                                <i class="fas fa-ticket-alt feature-icon"></i>
+                                <small>Submit Tickets</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="feature-item">
+                                <i class="fas fa-chart-line feature-icon"></i>
+                                <small>Track Progress</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="feature-item">
+                                <i class="fas fa-headset feature-icon"></i>
+                                <small>Get Support</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                {{ form.password(class="form-control text-center", placeholder="Password") }}
-                {% if form.password.errors %}
-                    {% for error in form.password.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-            <div class="d-flex justify-content-center gap-2 mb-3">
-                {{ form.submit(class="btn btn-primary px-4") }}
-                <a href="/" class="btn btn-outline-secondary px-4">Back</a>
-            </div>
-        </form>
-        <div class="text-center mt-3">
-            <a href="#" class="small">Forgot password? Click here</a><br>
-            <a href="{{ url_for('register') }}" class="small">Not Registered? Click here to register</a>
         </div>
     </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('floatingPassword');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+// Add floating animation to the card
+document.addEventListener('DOMContentLoaded', function() {
+    const loginCard = document.querySelector('.login-card');
+    loginCard.style.animation = 'fadeInUp 0.6s ease-out';
+});
+</script>
 {% endblock %}
