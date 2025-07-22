@@ -488,10 +488,8 @@ def print_ticket(id):
 def close_ticket(id):
     ticket = Ticket.query.get_or_404(id)
 
-    # Check permissions - users can close their own tickets, interns and admins can close assigned tickets
-    if current_user.role == 'user' and ticket.created_by_id != current_user.id:
-        abort(403)
-    elif current_user.role == 'intern' and current_user.id not in [u.id for u in ticket.assignees]:
+    # Check permissions - only admins and ticket creators can close tickets
+    if current_user.role != 'admin' and ticket.created_by_id != current_user.id:
         abort(403)
 
     # Check if ticket is already closed
