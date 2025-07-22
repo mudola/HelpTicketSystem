@@ -998,3 +998,39 @@ body, html {
 .notification-updated:hover {
     background-color: #f8f9fa;
 }
+
+/* Add your custom styles here */
+
+/* Ticket Workflow Styles */
+.workflow-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.workflow-step i {
+    min-width: 16px;
+}
+
+.workflow-step .badge {
+    margin-left: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .workflow-step {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .workflow-step small {
+        width: 100%;
+        margin-left: 2rem;
+    }
+}

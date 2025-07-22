@@ -58,28 +58,52 @@
                 </div>
                 {% endif %}
                 
+                <!-- Ticket Workflow Information -->
+                <div class="mb-3">
+                    <div class="card bg-light">
+                        <div class="card-body py-2">
+                            <h6 class="card-title mb-2"><i class="fas fa-route me-2"></i>Ticket Workflow</h6>
+                            <div class="workflow-chain">
+                                <!-- Created Step -->
+                                <div class="workflow-step">
+                                    <i class="fas fa-plus-circle text-primary"></i>
+                                    <strong>Created by:</strong> {{ ticket.creator.full_name if ticket.creator else 'Unknown User' }}
+                                    <small class="text-muted">({{ ticket.created_at|format_datetime }})</small>
+                                </div>
+                                
+                                <!-- Assigned Step -->
+                                {% if ticket.assignees|length > 0 %}
+                                <div class="workflow-step">
+                                    <i class="fas fa-arrow-right text-muted"></i>
+                                    <i class="fas fa-user-check text-warning"></i>
+                                    <strong>Assigned to:</strong>
+                                    {% for user in ticket.assignees %}
+                                        <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Closed Step -->
+                                {% if ticket.status == 'closed' and ticket.closed_by %}
+                                <div class="workflow-step">
+                                    <i class="fas fa-arrow-right text-muted"></i>
+                                    <i class="fas fa-times-circle text-success"></i>
+                                    <strong>Closed by:</strong> {{ ticket.closed_by.full_name }}
+                                    <small class="text-muted">({{ ticket.closed_at|format_datetime }})</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Details -->
                 <div class="row">
                     <div class="col-md-6">
                         <small class="text-muted">
                             <strong>Created:</strong> {{ ticket.created_at|format_datetime }}<br>
-                            <strong>Created by:</strong> {{ ticket.creator.full_name }}<br>
                             {% if ticket.category %}
                             <strong>Category:</strong> {{ ticket.category.name }}<br>
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="col-md-6">
-                        <small class="text-muted">
-                            <strong>Last updated:</strong> {{ ticket.updated_at|format_datetime }}<br>
-                            <strong>Assigned to:</strong>
-                            {% if ticket.assignees|length == 0 %}
-                                Unassigned
-                            {% else %}
-                                {% for user in ticket.assignees %}{{ user.full_name }}{% if not loop.last %}, {% endif %}{% endfor %}
-                            {% endif %}<br>
-                            {% if ticket.closed_at %}
-                            <strong>Closed:</strong> {{ ticket.closed_at|format_datetime }}<br>
-                            <strong>Closed by:</strong> {{ ticket.closed_by.full_name if ticket.closed_by else 'System' }}<br>
                             {% endif %}
                             {% if ticket.due_date %}
                             <strong>Due date:</strong> {{ ticket.due_date|format_datetime }}<br>
@@ -87,6 +111,15 @@
                             <span class="badge bg-danger">Overdue</span><br>
                             {% endif %}
                             {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Last updated:</strong> {{ ticket.updated_at|format_datetime }}<br>
+                            <strong>Current Status:</strong> 
+                            <span class="badge {{ ticket.status|status_badge }}">{{ ticket.status.replace('_', ' ').title() }}</span><br>
+                            <strong>Priority:</strong> 
+                            <span class="badge {{ ticket.priority|priority_badge }}">{{ ticket.priority.title() }}</span>
                         </small>
                     </div>
                 </div>
