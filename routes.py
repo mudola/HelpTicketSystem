@@ -425,6 +425,7 @@ def update_ticket(id):
         if form.status.data == 'closed' and old_status != 'closed':
             ticket.closed_at = datetime.utcnow()
             ticket.closed_by_id = current_user.id
+            # Preserve assignees when closing ticket - do not clear them
         elif form.status.data != 'closed':
             ticket.closed_at = None
             ticket.closed_by_id = None
@@ -523,6 +524,7 @@ def close_ticket(id):
     ticket.closed_at = datetime.utcnow()
     ticket.closed_by_id = current_user.id
     ticket.updated_at = datetime.utcnow()
+    # Preserve assignees when closing - do not modify assignment
     
     # Log the closure
     from models import TicketHistory

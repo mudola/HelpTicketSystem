@@ -77,7 +77,7 @@
                     <td>
                         {% if ticket.assignees|length > 0 %}
                             {% for user in ticket.assignees %}
-                                <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %}, {% endif %}
+                                <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %} {% endif %}
                             {% endfor %}
                         {% else %}
                             <span class="text-muted">Unassigned</span>
