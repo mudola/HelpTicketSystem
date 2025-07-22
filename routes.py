@@ -849,9 +849,17 @@ def delete_ticket(ticket_id):
     
     ticket = Ticket.query.get_or_404(ticket_id)
     
-    # Delete associated comments and attachments
+    # Delete associated records in the correct order
+    # Delete ticket history first
+    from models import TicketHistory
+    TicketHistory.query.filter_by(ticket_id=ticket_id).delete()
+    
+    # Delete comments and attachments
     Comment.query.filter_by(ticket_id=ticket_id).delete()
     Attachment.query.filter_by(ticket_id=ticket_id).delete()
+    
+    # Clear assignees (many-to-many relationship)
+    ticket.assignees.clear()
     
     # Delete the ticket
     db.session.delete(ticket)
