@@ -98,7 +98,7 @@ with app.app_context():
 def inject_now():
     return {'now': datetime.utcnow}
 
-# Import routes
+# Import routes after app context is set up
 import routes
 
 if __name__ == '__main__':
