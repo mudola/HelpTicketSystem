@@ -304,7 +304,7 @@ def ticket_detail(id):
         comments = Comment.query.filter_by(ticket_id=id).order_by(Comment.created_at).all()
 
     comment_form = CommentForm()
-    update_form = TicketUpdateForm(user_role=current_user.role, obj=ticket) if current_user.role in ['admin', 'intern'] else None
+    update_form = TicketUpdateForm(user_role=current_user.role, current_status=ticket.status, obj=ticket) if current_user.role in ['admin', 'intern'] else None
 
     return render_template('ticket_detail.html', ticket=ticket, comments=comments, 
                          comment_form=comment_form, update_form=update_form)
@@ -357,7 +357,7 @@ def update_ticket(id):
     if current_user.role == 'intern' and current_user not in ticket.assignees:
         abort(403)
 
-    form = TicketUpdateForm(user_role=current_user.role)
+    form = TicketUpdateForm(user_role=current_user.role, current_status=ticket.status)
     if form.validate_on_submit():
         old_status = ticket.status
         old_priority = ticket.priority
@@ -366,6 +366,11 @@ def update_ticket(id):
         # Prevent interns from closing tickets
         if current_user.role == 'intern' and form.status.data == 'closed':
             flash('Interns cannot close tickets. Only admins and ticket creators can close tickets.', 'danger')
+            return redirect(url_for('ticket_detail', id=id))
+        
+        # Prevent interns from reverting resolved tickets
+        if current_user.role == 'intern' and old_status == 'resolved' and form.status.data != 'resolved':
+            flash('Interns cannot revert resolved tickets. Only administrators can modify resolved tickets.', 'danger')
             return redirect(url_for('ticket_detail', id=id))
         
         # Prevent reverting closed tickets
