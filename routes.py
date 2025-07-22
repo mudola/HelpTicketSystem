@@ -169,7 +169,12 @@ def tickets_list():
     if current_user.role == 'user':
         query = query.filter_by(created_by_id=current_user.id)
     elif current_user.role == 'intern':
-        query = query.filter(Ticket.assignees.any(id=current_user.id))
+        # For interns, if status is 'assigned', show all assigned tickets
+        if status_filter == 'assigned':
+            query = query.filter(Ticket.assignees.any(id=current_user.id))
+            status_filter = ''  # Clear status filter since we're showing all assigned tickets
+        else:
+            query = query.filter(Ticket.assignees.any(id=current_user.id))
     # Admin can see all tickets
 
     # Apply filters
