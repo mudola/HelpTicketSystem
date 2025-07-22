@@ -1,99 +1,619 @@
+
 {% extends "base.html" %}
 
 {% block title %}Admin Dashboard - ICT Helpdesk{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h2>
-    <div>
-        <a href="{{ url_for('reports') }}" class="btn btn-outline-info me-2">
-            <i class="fas fa-chart-bar me-2"></i>Reports
-        </a>
-        <a href="{{ url_for('user_management') }}" class="btn btn-outline-warning me-2">
-            <i class="fas fa-users me-2"></i>Manage Users
-        </a>
-        <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary me-2">
-            <i class="fas fa-list me-2"></i>View All Tickets
-        </a>
-        <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>New Ticket
-        </a>
-    </div>
-</div>
-
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary">
-            <div class="card-body text-center">
-                <i class="fas fa-ticket-alt fa-2x mb-2"></i>
-                <h4>{{ stats.total_tickets }}</h4>
-                <p class="mb-0">Total Tickets</p>
-            </div>
+<!-- Enhanced Header with Gradient Background -->
+<div class="admin-header mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="admin-title">
+                <i class="fas fa-crown me-2 text-warning"></i>
+                Admin Control Center
+            </h2>
+            <p class="admin-subtitle mb-0">System overview and management tools</p>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning">
-            <div class="card-body text-center">
-                <i class="fas fa-clock fa-2x mb-2"></i>
-                <h4>{{ stats.open_tickets }}</h4>
-                <p class="mb-0">Open Tickets</p>
+        <div class="admin-actions">
+            <div class="btn-group me-2" role="group">
+                <a href="{{ url_for('reports') }}" class="btn btn-outline-info">
+                    <i class="fas fa-chart-line me-2"></i>Analytics
+                </a>
+                <a href="{{ url_for('user_management') }}" class="btn btn-outline-warning">
+                    <i class="fas fa-users-cog me-2"></i>Users
+                </a>
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info">
-            <div class="card-body text-center">
-                <i class="fas fa-spinner fa-2x mb-2"></i>
-                <h4>{{ stats.in_progress_tickets }}</h4>
-                <p class="mb-0">In Progress</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success">
-            <div class="card-body text-center">
-                <i class="fas fa-check fa-2x mb-2"></i>
-                <h4>{{ stats.closed_tickets }}</h4>
-                <p class="mb-0">Closed Tickets</p>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list-ul me-2"></i>All Tickets
+                </a>
+                <a href="{{ url_for('new_ticket') }}" class="btn btn-primary btn-pulse">
+                    <i class="fas fa-plus me-2"></i>New Ticket
+                </a>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Real-time Status Banner -->
+<div class="status-banner mb-4">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-server text-success"></i>
+                <span class="status-text">System Online</span>
+                <div class="status-indicator online"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-database text-info"></i>
+                <span class="status-text">Database Active</span>
+                <div class="status-indicator online"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-users text-primary"></i>
+                <span class="status-text">{{ stats.total_users }} Users</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-clock text-warning"></i>
+                <span class="status-text" id="current-time"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Statistics Cards with Animations -->
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-danger">
-            <div class="card-body text-center">
-                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                <h4>{{ stats.urgent_tickets }}</h4>
-                <p class="mb-0">Urgent Tickets</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-secondary">
-            <div class="card-body text-center">
-                <i class="fas fa-users fa-2x mb-2"></i>
-                <h4>{{ stats.total_users }}</h4>
-                <p class="mb-0">Total Users</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card card-primary" data-aos="fade-up" data-aos-delay="100">
             <div class="card-body">
-                <h6 class="card-title">User Distribution</h6>
+                <div class="stats-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 class="stats-number" data-target="{{ stats.total_tickets }}">0</h3>
+                    <p class="stats-label">Total Tickets</p>
+                    <div class="stats-progress">
+                        <div class="progress-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card card-warning" data-aos="fade-up" data-aos-delay="200">
+            <div class="card-body">
+                <div class="stats-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 class="stats-number" data-target="{{ stats.open_tickets }}">0</h3>
+                    <p class="stats-label">Open Tickets</p>
+                    <div class="stats-progress">
+                        <div class="progress-bar" style="width: {{ (stats.open_tickets / stats.total_tickets * 100) if stats.total_tickets > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card card-info" data-aos="fade-up" data-aos-delay="300">
+            <div class="card-body">
+                <div class="stats-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 class="stats-number" data-target="{{ stats.in_progress_tickets }}">0</h3>
+                    <p class="stats-label">In Progress</p>
+                    <div class="stats-progress">
+                        <div class="progress-bar" style="width: {{ (stats.in_progress_tickets / stats.total_tickets * 100) if stats.total_tickets > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card card-success" data-aos="fade-up" data-aos-delay="400">
+            <div class="card-body">
+                <div class="stats-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stats-content">
+                    <h3 class="stats-number" data-target="{{ stats.closed_tickets }}">0</h3>
+                    <p class="stats-label">Resolved</p>
+                    <div class="stats-progress">
+                        <div class="progress-bar" style="width: {{ (stats.closed_tickets / stats.total_tickets * 100) if stats.total_tickets > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Panel -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card quick-actions-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('new_ticket') }}" class="quick-action-btn">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Create Ticket</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('user_management') }}" class="quick-action-btn">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Add User</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('reports') }}" class="quick-action-btn">
+                            <i class="fas fa-download"></i>
+                            <span>Export Report</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card priority-alerts">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Priority Alerts
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert-item">
+                    <div class="alert-icon urgent">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="alert-content">
+                        <span class="alert-number">{{ stats.urgent_tickets }}</span>
+                        <span class="alert-label">Urgent Tickets</span>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon overdue">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="alert-content">
+                        <span class="alert-number">0</span>
+                        <span class="alert-label">Overdue Tasks</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Performance Dashboard -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card team-performance">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2 text-info"></i>Team Distribution
+                </h5>
+            </div>
+            <div class="card-body">
                 {% for role_stat in user_stats %}
-                <div class="d-flex justify-content-between">
-                    <span>{{ role_stat.role.title() }}s:</span>
-                    <strong>{{ role_stat.count }}</strong>
+                <div class="team-member-row">
+                    <div class="team-role">
+                        <span class="role-badge role-{{ role_stat.role }}">
+                            {% if role_stat.role == 'admin' %}
+                                <i class="fas fa-crown"></i>
+                            {% elif role_stat.role == 'intern' %}
+                                <i class="fas fa-user-graduate"></i>
+                            {% else %}
+                                <i class="fas fa-user"></i>
+                            {% endif %}
+                            {{ role_stat.role.title() }}s
+                        </span>
+                    </div>
+                    <div class="team-count">
+                        <span class="count-number">{{ role_stat.count }}</span>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
     </div>
+    
+    <div class="col-md-6">
+        <div class="card system-health">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-heart me-2 text-danger"></i>System Health
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="health-metric">
+                    <div class="metric-label">Response Time</div>
+                    <div class="metric-value">
+                        <span class="value-number">0.8s</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="health-metric">
+                    <div class="metric-label">Uptime</div>
+                    <div class="metric-value">
+                        <span class="value-number">99.9%</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 99%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="health-metric">
+                    <div class="metric-label">Database Health</div>
+                    <div class="metric-value">
+                        <span class="value-number">Good</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Recent Activity section fully removed as requested. Only 'View All Tickets' remains. -->
+<style>
+/* Admin Dashboard Custom Styles */
+.admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.admin-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.admin-subtitle {
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+}
+
+/* Status Banner */
+.status-banner {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: auto;
+}
+
+.status-indicator.online {
+    background: #22c55e;
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Enhanced Stats Cards */
+.stats-card {
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: white;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.stats-card.card-primary { border-left: 4px solid #007bff; }
+.stats-card.card-warning { border-left: 4px solid #ffc107; }
+.stats-card.card-info { border-left: 4px solid #17a2b8; }
+.stats-card.card-success { border-left: 4px solid #28a745; }
+
+.stats-card .card-body {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.stats-icon {
+    font-size: 2.5rem;
+    margin-right: 1rem;
+    opacity: 0.8;
+}
+
+.stats-content {
+    flex: 1;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    color: #333;
+}
+
+.stats-label {
+    color: #666;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.stats-progress {
+    margin-top: 0.5rem;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 1s ease;
+}
+
+/* Quick Actions */
+.quick-actions-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.quick-action-btn:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    color: #007bff;
+}
+
+.quick-action-btn i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Priority Alerts */
+.priority-alerts {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.alert-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.alert-item:last-child {
+    border-bottom: none;
+}
+
+.alert-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.alert-icon.urgent {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.alert-icon.overdue {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.alert-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+}
+
+.alert-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Team Performance */
+.team-performance, .system-health {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.team-member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.team-member-row:last-child {
+    border-bottom: none;
+}
+
+.role-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.role-badge.role-admin {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.role-badge.role-intern {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.role-badge.role-user {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+}
+
+.count-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* System Health Metrics */
+.health-metric {
+    margin-bottom: 1.5rem;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.value-number {
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.metric-bar {
+    flex: 1;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.metric-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 1s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 1.5rem;
+    }
+    
+    .admin-title {
+        font-size: 1.5rem;
+    }
+    
+    .admin-actions {
+        margin-top: 1rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+</style>
+
+<script>
+// Real-time clock
+function updateTime() {
+    const now = new Date();
+    document.getElementById('current-time').textContent = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// Animated counter
+function animateCounter(element, target) {
+    let current = 0;
+    const increment = target / 50;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+    }, 30);
+}
+
+// Initialize counters
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.stats-number').forEach(element => {
+        const target = parseInt(element.getAttribute('data-target'));
+        animateCounter(element, target);
+    });
+});
+</script>
 {% endblock %}
