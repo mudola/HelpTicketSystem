@@ -459,12 +459,12 @@ body, html {
 }
 
 .priority-high { 
-    background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+    background: linear-gradient(135deg, #ff6b35 0%, #d73502 100%);
     color: white;
 }
 
 .priority-medium { 
-    background: linear-gradient(135deg, var(--warning) 0%, var(--accent-dark) 100%);
+    background: linear-gradient(135deg, #ffb347 0%, #ff8c00 100%);
     color: white;
 }
 
