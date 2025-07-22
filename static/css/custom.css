@@ -144,10 +144,10 @@
 .login-btn {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     border: none;
-    border-radius: 12px;
-    padding: 1rem 2rem;
+    border-radius: 8px;
+    padding: 0.8rem 1.5rem;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
@@ -217,7 +217,7 @@
 .login-divider {
     position: relative;
     text-align: center;
-    margin: 2rem 0;
+    margin: 1.5rem 0;
 }
 
 .login-divider::before {
@@ -321,16 +321,16 @@
         margin: 1rem;
         border-radius: 1rem;
     }
-    
+
     .login-title {
         font-size: 1.5rem;
     }
-    
+
     .login-features {
         margin-top: 2rem;
         padding: 1rem;
     }
-    
+
     .feature-icon {
         font-size: 1.2rem;
     }
@@ -358,7 +358,7 @@
     z-index: 1;
     position: static;
     margin-top: 0;
-    
+
 }
    ===================== */
 
