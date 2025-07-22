@@ -14,8 +14,7 @@ app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-# ['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://sql8785118:ZzV7IVGefP@sql8.freesqldatabase.com:3306/sql8785118'
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost:3306/helpticket_system"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///instance/test.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -100,4 +99,7 @@ def inject_now():
 
 # Import routes
 import routes
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
