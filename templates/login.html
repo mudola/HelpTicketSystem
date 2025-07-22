@@ -3,55 +3,36 @@
 {% block title %}Login - ICT Helpdesk{% endblock %}
 
 {% block content %}
-<body class="login-bg">
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <div class="card login-card text-center">
-            <div class="login-brand-header mt-4">
-                <i class="fas fa-headset fa-2x"></i>
-                <h2>ICT Helpdesk</h2>
+<div class="row justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="col-md-4 text-center">
+        <img src="{{ url_for('static', filename='uploads/download.jpeg') }}" alt="ICT Helpdesk Logo" class="mb-4" style="width: 100px;">
+        <h5 class="mb-4 text-muted">User Login</h5>
+        <form method="POST" class="mt-4">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.username(class="form-control text-center", placeholder="Username") }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
             </div>
-            <div class="login-avatar-container mb-3">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User Avatar" class="login-avatar">
+            <div class="mb-3">
+                {{ form.password(class="form-control text-center", placeholder="Password") }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
             </div>
-           <!-- <div class="card-header login-card-header">
-                <h4><i class="fas fa-sign-in-alt me-2"></i>Sign In</h4>
-            </div> -->
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3 text-start">
-                        {{ form.username.label(class="form-label") }}
-                        {{ form.username(class="form-control") }}
-                        {% if form.username.errors %}
-                            {% for error in form.username.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3 text-start">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                        {% if form.password.errors %}
-                            {% for error in form.password.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="mb-3 form-check text-start">
-                        {{ form.remember_me(class="form-check-input") }}
-                        {{ form.remember_me.label(class="form-check-label") }}
-                    </div>
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary login-btn") }}
-                    </div>
-                </form>
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                {{ form.submit(class="btn btn-primary px-4") }}
+                <a href="/" class="btn btn-outline-secondary px-4">Back</a>
             </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
-            </div>
+        </form>
+        <div class="text-center mt-3">
+            <a href="#" class="small">Forgot password? Click here</a><br>
+            <a href="{{ url_for('register') }}" class="small">Not Registered? Click here to register</a>
         </div>
     </div>
-</div>
-</body>
 {% endblock %}

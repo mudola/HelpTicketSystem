@@ -34,6 +34,10 @@
             </div>
             <div class="card-body">
                 <div class="mb-3">
+                    <strong>Location:</strong>
+                    <div class="mt-2">{{ ticket.location }}</div>
+                </div>
+                <div class="mb-3">
                     <strong>Description:</strong>
                     <div class="mt-2">{{ ticket.description|nl2br }}</div>
                 </div>
@@ -41,16 +45,16 @@
                 {% if ticket.attachments %}
                 <div class="mb-3">
                     <strong>Attachments:</strong>
-                    <ul class="list-unstyled mt-2">
-                        {% for attachment in ticket.attachments %}
-                        <li>
-                            <a href="{{ url_for('uploaded_file', filename=attachment.filename) }}" class="text-decoration-none">
-                                <i class="fas fa-paperclip me-2"></i>{{ attachment.original_filename }}
-                            </a>
-                            <small class="text-muted">({{ "%.1f"|format(attachment.file_size / 1024) }} KB)</small>
-                        </li>
-                        {% endfor %}
-                    </ul>
+                                        <ul class="list-unstyled mt-2">
+                    {% for attachment in ticket.attachments %}
+                                            <li>
+                                                <a href="{{ url_for('uploaded_file', filename=attachment.filename) }}" class="text-decoration-none">
+                                                    <i class="fas fa-paperclip me-2"></i>{{ attachment.original_filename }}
+                                                </a>
+                                                <small class="text-muted">({{ "%.1f"|format(attachment.file_size / 1024) }} KB)</small>
+                                            </li>
+                    {% endfor %}
+                                        </ul>
                 </div>
                 {% endif %}
                 
@@ -67,9 +71,21 @@
                     <div class="col-md-6">
                         <small class="text-muted">
                             <strong>Last updated:</strong> {{ ticket.updated_at|format_datetime }}<br>
-                            <strong>Assigned to:</strong> {{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}<br>
+                            <strong>Assigned to:</strong>
+                            {% if ticket.assignees|length == 0 %}
+                                Unassigned
+                            {% else %}
+                                {% for user in ticket.assignees %}{{ user.full_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                            {% endif %}<br>
                             {% if ticket.closed_at %}
                             <strong>Closed:</strong> {{ ticket.closed_at|format_datetime }}<br>
+                            <strong>Closed by:</strong> {{ ticket.closed_by.full_name if ticket.closed_by else 'N/A' }}<br>
+                            {% endif %}
+                            {% if ticket.due_date %}
+                            <strong>Due date:</strong> {{ ticket.due_date|format_datetime }}<br>
+                            {% if ticket.status != 'closed' and ticket.due_date < now() %}
+                            <span class="badge bg-danger">Overdue</span><br>
+                            {% endif %}
                             {% endif %}
                         </small>
                     </div>
@@ -187,8 +203,9 @@
                     
                     {% if current_user.role == 'admin' %}
                     <div class="mb-3">
-                        {{ update_form.assigned_to_id.label(class="form-label") }}
-                        {{ update_form.assigned_to_id(class="form-control") }}
+                        {{ update_form.assignees.label(class="form-label") }}
+                        {{ update_form.assignees(class="form-control", multiple=True) }}
+                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple assignees.</div>
                     </div>
                     {% endif %}
                     

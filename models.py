@@ -17,7 +17,7 @@ class User(UserMixin, db.Model):
 
     # Relationships
     tickets_created = db.relationship('Ticket', foreign_keys='Ticket.created_by_id', backref='creator', lazy='dynamic')
-    tickets_assigned = db.relationship('Ticket', foreign_keys='Ticket.assigned_to_id', backref='assignee', lazy='dynamic')
+    assigned_tickets = db.relationship('Ticket', secondary='ticket_assignees', back_populates='assignees', lazy='selectin')
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
 
     def __repr__(self):
@@ -35,6 +35,12 @@ class Category(db.Model):
     def __repr__(self):
         return f'<Category {self.name}>'
 
+# Association table for many-to-many Ticket <-> User (assignees)
+ticket_assignees = db.Table('ticket_assignees',
+    db.Column('ticket_id', db.Integer, db.ForeignKey('ticket.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+)
+
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     location = db.Column(db.String(200), nullable=False)
@@ -44,15 +50,18 @@ class Ticket(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     closed_at = db.Column(db.DateTime)
+    closed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    due_date = db.Column(db.DateTime, nullable=True)
 
     # Foreign Keys
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    assigned_to_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
 
     # Relationships
     comments = db.relationship('Comment', backref='ticket', lazy='dynamic', cascade='all, delete-orphan')
     attachments = db.relationship('Attachment', backref='ticket', lazy='dynamic', cascade='all, delete-orphan')
+    assignees = db.relationship('User', secondary=ticket_assignees, back_populates='assigned_tickets', lazy='selectin')
+    closed_by = db.relationship('User', foreign_keys=[closed_by_id], backref='closed_tickets')
 
     def __repr__(self):
         return f'<Ticket {self.id}: {self.location}>'
@@ -87,3 +96,19 @@ class Attachment(db.Model):
 
     def __repr__(self):
         return f'<Attachment {self.original_filename}>'
+
+class TicketHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action = db.Column(db.String(100), nullable=False)  # e.g., 'created', 'status changed', 'updated', etc.
+    field_changed = db.Column(db.String(100), nullable=True)  # e.g., 'status', 'priority', etc.
+    old_value = db.Column(db.String(200), nullable=True)
+    new_value = db.Column(db.String(200), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='ticket_histories')
+    ticket = db.relationship('Ticket', backref='histories')
+
+    def __repr__(self):
+        return f'<TicketHistory {self.id} on Ticket {self.ticket_id}>'

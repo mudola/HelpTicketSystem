@@ -10,6 +10,11 @@
     </a>
 </div>
 
+<!-- Instant Search -->
+<div class="mb-3">
+    <input type="text" id="ticket-search" class="form-control" placeholder="Search tickets...">
+</div>
+
 <!-- Filters -->
 <div class="card mb-4">
     <div class="card-body">
@@ -48,143 +53,61 @@
 
 <!-- Tickets Table -->
 <div class="card">
-    <div class="card-body">
-        {% if tickets.items %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            {% if current_user.role == 'admin' %}
-                            <th>Created By</th>
-                            <th>Assigned To</th>
-                            {% elif current_user.role == 'intern' %}
-                            <th>Created By</th>
-                            <th>Category</th>
-                            {% else %}
-                            <th>Assigned To</th>
-                            <th>Category</th>
-                            {% endif %}
-                            <th>Created</th>
-                            <th>Updated</th>
-                            {% if current_user.role == 'admin' %}
-                            <th>Actions</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ticket in tickets.items %}
-                        <tr>
-                            <td>#{{ ticket.id }}</td>
-                            <td>
-                                <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="text-decoration-none">
-                                    {{ ticket.location[:50] if ticket.location else ticket.title[:50] }}{% if (ticket.location and ticket.location|length > 50) or (not ticket.location and ticket.title|length > 50) %}...{% endif %}
-                                </a>
-                            </td>
-                            <td>
-                                <span class="badge {{ ticket.status|status_badge }}">
-                                    {{ ticket.status.replace('_', ' ').title() }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge {{ ticket.priority|priority_badge }}">
-                                    {{ ticket.priority.title() }}
-                                </span>
-                            </td>
-                            {% if current_user.role == 'admin' %}
-                            <td>{{ ticket.creator.full_name }}</td>
-                            <td>{{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}</td>
-                            {% elif current_user.role == 'intern' %}
-                            <td>{{ ticket.creator.full_name }}</td>
-                            <td>{{ ticket.category.name if ticket.category else 'N/A' }}</td>
-                            {% else %}
-                            <td>{{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}</td>
-                            <td>{{ ticket.category.name if ticket.category else 'N/A' }}</td>
-                            {% endif %}
-                            <td>{{ ticket.created_at|format_datetime }}</td>
-                            <td>{{ ticket.updated_at|time_ago }}</td>
-                            {% if current_user.role == 'admin' %}
-                            <td>
-                                <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="btn btn-primary btn-sm me-1">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <form method="POST" action="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" style="display: inline;" 
-                                      onsubmit="return confirm('Are you sure you want to delete ticket #{{ ticket.id }}?')">
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            {% if tickets.pages > 1 %}
-            <nav aria-label="Ticket pagination">
-                <ul class="pagination justify-content-center">
-                    {% if tickets.has_prev %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('tickets_list', page=tickets.prev_num, status=status_filter, priority=priority_filter) }}">Previous</a>
-                        </li>
-                    {% endif %}
-
-                    {% for page_num in tickets.iter_pages() %}
-                        {% if page_num %}
-                            {% if page_num != tickets.page %}
-                                <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('tickets_list', page=page_num, status=status_filter, priority=priority_filter) }}">{{ page_num }}</a>
-                                </li>
-                            {% else %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ page_num }}</span>
-                                </li>
-                            {% endif %}
+    <div class="table-responsive">
+        <table class="table" id="tickets-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets.items %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>{{ ticket.title or ticket.description[:40] }}</td>
+                    <td><span class="badge badge-status-{{ ticket.status|replace(' ', '_') }}">{{ ticket.status.title() }}</span></td>
+                    <td>{{ ticket.priority.title() }}</td>
+                    <td>
+                        {% if ticket.assignees|length > 0 %}
+                            {% for user in ticket.assignees %}
+                                <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
                         {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
-                            </li>
+                            <span class="text-muted">Unassigned</span>
                         {% endif %}
-                    {% endfor %}
-
-                    {% if tickets.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('tickets_list', page=tickets.next_num, status=status_filter, priority=priority_filter) }}">Next</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No tickets found</h5>
-                <p class="text-muted">
-                    {% if status_filter or priority_filter %}
-                        No tickets match your current filters.
-                    {% else %}
-                        {% if current_user.role == 'user' %}
-                            You haven't created any tickets yet.
-                        {% elif current_user.role == 'intern' %}
-                            No tickets have been assigned to you yet.
-                        {% else %}
-                            No tickets in the system yet.
-                        {% endif %}
-                    {% endif %}
-                </p>
-                {% if not status_filter and not priority_filter %}
-                <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Create Your First Ticket
-                </a>
-                {% endif %}
-            </div>
-        {% endif %}
+                    </td>
+                    <td>{{ ticket.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ ticket.updated_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Instant search for tickets table
+const searchInput = document.getElementById('ticket-search');
+const table = document.getElementById('tickets-table');
+searchInput.addEventListener('keyup', function() {
+    const filter = this.value.toLowerCase();
+    for (const row of table.tBodies[0].rows) {
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    }
+});
+</script>
 {% endblock %}

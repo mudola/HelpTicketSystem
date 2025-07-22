@@ -2,14 +2,36 @@
 
 {% block title %}Reports - ICT Helpdesk{% endblock %}
 
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
     <h2><i class="fas fa-chart-bar me-2"></i>Reports</h2>
-    <div class="d-flex gap-2">
-        <div class="btn-group">
-            <a href="{{ url_for('reports', days=7) }}" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
-            <a href="{{ url_for('reports', days=30) }}" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
-            <a href="{{ url_for('reports', days=90) }}" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <form method="get" class="d-flex gap-2 align-items-center flex-wrap" id="reportFilterForm">
+            <input type="hidden" name="days" value="{{ days }}">
+            <div>
+                <label for="created_by" class="form-label mb-0 me-1">Created By:</label>
+                <select name="created_by" id="created_by" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 150px;">
+                    <option value="">All</option>
+                    {% for user in all_users %}
+                        <option value="{{ user.id }}" {% if created_by|int == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="attended_by" class="form-label mb-0 me-1">Attended By:</label>
+                <select name="attended_by" id="attended_by" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 150px;">
+                    <option value="">All</option>
+                    {% for user in all_users %}
+                        <option value="{{ user.id }}" {% if attended_by|int == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+        <div class="btn-group ms-2">
+            <a href="{{ url_for('reports', days=7, created_by=created_by, attended_by=attended_by) }}" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
+            <a href="{{ url_for('reports', days=30, created_by=created_by, attended_by=attended_by) }}" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
+            <a href="{{ url_for('reports', days=90, created_by=created_by, attended_by=attended_by) }}" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
         </div>
         <button onclick="printReport()" class="btn btn-primary">
             <i class="fas fa-print me-1"></i>Print Report
@@ -181,6 +203,89 @@
         </div>
     </div>
 </div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+                <h5 class="mb-0">Detailed Ticket Activity</h5>
+                <div class="form-check form-check-inline ms-2">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-id" checked> ID</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-summary" checked> Summary</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-assignee" checked> Assignee</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-creator" checked> Creator</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-category" checked> Category</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-location" checked> Location</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-status" checked> Status</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-created" checked> Created</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-due" checked> Due Date</label>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if tickets %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="detailedReportTable">
+                        <thead>
+                            <tr>
+                                <th class="col-id">ID</th>
+                                <th class="col-summary">Summary</th>
+                                <th class="col-assignee">Assignee</th>
+                                <th class="col-creator">Creator</th>
+                                <th class="col-category">Category</th>
+                                <th class="col-location">Location</th>
+                                <th class="col-status">Status</th>
+                                <th class="col-created">Created</th>
+                                <th class="col-due">Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for ticket in tickets %}
+                            <tr>
+                                <td class="col-id">#{{ ticket.id }}</td>
+                                <td class="col-summary">{{ ticket.description[:60] ~ ('...' if ticket.description|length > 60 else '') }}</td>
+                                <td class="col-assignee">
+                                    {% if ticket.assignees %}
+                                        {% for assignee in ticket.assignees %}
+                                            <span class="badge bg-secondary">{{ assignee.full_name }}</span>{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-creator">{{ ticket.creator.full_name if ticket.creator else 'N/A' }}</td>
+                                <td class="col-category">{{ ticket.category.name if ticket.category else 'N/A' }}</td>
+                                <td class="col-location">{{ ticket.location }}</td>
+                                <td class="col-status">{{ ticket.status.title() }}</td>
+                                <td class="col-created">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="col-due">{{ ticket.due_date.strftime('%Y-%m-%d') if ticket.due_date else 'N/A' }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">No tickets found for this period.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -248,17 +353,33 @@ function printReport() {
         elementsToHide.forEach(el => el.classList.remove('no-print'));
     }, 1000);
 }
+
+// Column toggle logic
+window.addEventListener('DOMContentLoaded', function() {
+    const toggles = document.querySelectorAll('.report-col-toggle');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const colClass = this.getAttribute('data-col');
+            const checked = this.checked;
+            document.querySelectorAll('.' + colClass).forEach(cell => {
+                cell.style.display = checked ? '' : 'none';
+            });
+        });
+    });
+});
 </script>
 <script>
 // Status Chart
-{% if status_stats %}
+{% if status_stats and (status_stats|length > 0) %}
 const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusLabels = [{% for stat in status_stats %}'{{ stat.status.replace('_', ' ').title() }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+const statusData = [{% for stat in status_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}];
 new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: [{% for stat in status_stats %}'{{ stat.status.replace("_", " ").title() }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        labels: statusLabels,
         datasets: [{
-            data: [{% for stat in status_stats %}{{ stat.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+            data: statusData,
             backgroundColor: [
                 '#0d6efd', // open - primary
                 '#ffc107', // in_progress - warning  
@@ -279,15 +400,17 @@ new Chart(statusCtx, {
 {% endif %}
 
 // Priority Chart
-{% if priority_stats %}
+{% if priority_stats and (priority_stats|length > 0) %}
 const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+const priorityLabels = [{% for stat in priority_stats %}'{{ stat.priority.title() }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+const priorityData = [{% for stat in priority_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}];
 new Chart(priorityCtx, {
     type: 'bar',
     data: {
-        labels: [{% for stat in priority_stats %}'{{ stat.priority.title() }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        labels: priorityLabels,
         datasets: [{
             label: 'Tickets',
-            data: [{% for stat in priority_stats %}{{ stat.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+            data: priorityData,
             backgroundColor: [
                 '#6c757d', // low - secondary
                 '#ffc107', // medium - warning

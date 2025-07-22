@@ -12,6 +12,9 @@
         <a href="{{ url_for('user_management') }}" class="btn btn-outline-warning me-2">
             <i class="fas fa-users me-2"></i>Manage Users
         </a>
+        <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-list me-2"></i>View All Tickets
+        </a>
         <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>New Ticket
         </a>
@@ -92,69 +95,5 @@
     </div>
 </div>
 
-<!-- Recent Activity -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="fas fa-history me-2"></i>Recent Activity
-        </h5>
-    </div>
-    <div class="card-body">
-        {% if recent_tickets %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Created By</th>
-                            <th>Assigned To</th>
-                            <th>Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ticket in recent_tickets %}
-                        <tr>
-                            <td>#{{ ticket.id }}</td>
-                            <td>{{ ticket.location[:40] }}{% if ticket.location and ticket.location|length > 40 %}...{% endif %}</td>
-                            <td>
-                                <span class="badge {{ ticket.status|status_badge }}">
-                                    {{ ticket.status.replace('_', ' ').title() }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge {{ ticket.priority|priority_badge }}">
-                                    {{ ticket.priority.title() }}
-                                </span>
-                            </td>
-                            <td>{{ ticket.creator.full_name }}</td>
-                            <td>{{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}</td>
-                            <td>{{ ticket.updated_at|time_ago }}</td>
-                            <td>
-                                <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="text-center">
-                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-list me-2"></i>View All Tickets
-                </a>
-            </div>
-        {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No tickets found</h5>
-                <p class="text-muted">System is ready to receive tickets.</p>
-            </div>
-        {% endif %}
-    </div>
-</div>
+<!-- Recent Activity section fully removed as requested. Only 'View All Tickets' remains. -->
 {% endblock %}

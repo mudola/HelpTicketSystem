@@ -14,77 +14,104 @@
 <div class="row mb-4">
     {% if current_user.role == 'intern' %}
         <div class="col-md-3">
-            <div class="card bg-primary">
-                <div class="card-body text-center">
-                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
-                    <h4>{{ stats.assigned_tickets }}</h4>
-                    <p class="mb-0">Assigned Tickets</p>
+            <a href="{{ url_for('tickets_list', status='assigned') }}" class="text-decoration-none">
+                <div class="card bg-primary h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                        <h4>{{ stats.assigned_tickets }}</h4>
+                        <p class="mb-0">Assigned Tickets</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info">
-                <div class="card-body text-center">
-                    <i class="fas fa-spinner fa-2x mb-2"></i>
-                    <h4>{{ stats.my_in_progress }}</h4>
-                    <p class="mb-0">In Progress</p>
+            <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+                <div class="card bg-info h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-spinner fa-2x mb-2"></i>
+                        <h4>{{ stats.my_in_progress }}</h4>
+                        <p class="mb-0">In Progress</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success">
-                <div class="card-body text-center">
-                    <i class="fas fa-check fa-2x mb-2"></i>
-                    <h4>{{ stats.my_resolved }}</h4>
-                    <p class="mb-0">Resolved</p>
+            <a href="{{ url_for('tickets_list', status='resolved') }}" class="text-decoration-none">
+                <div class="card bg-success h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check fa-2x mb-2"></i>
+                        <h4>{{ stats.my_resolved }}</h4>
+                        <p class="mb-0">Resolved</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card bg-secondary">
-                <div class="card-body text-center">
-                    <i class="fas fa-times fa-2x mb-2"></i>
-                    <h4>{{ stats.my_closed }}</h4>
-                    <p class="mb-0">Closed</p>
+            <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
+                <div class="card bg-secondary h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-times fa-2x mb-2"></i>
+                        <h4>{{ stats.my_closed }}</h4>
+                        <p class="mb-0">Closed</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
     {% else %}
         <div class="col-md-3">
-            <div class="card bg-primary">
-                <div class="card-body text-center">
-                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
-                    <h4>{{ stats.my_tickets }}</h4>
-                    <p class="mb-0">My Tickets</p>
+            <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+                <div class="card bg-primary h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                        <h4>{{ stats.my_tickets }}</h4>
+                        <p class="mb-0">My Tickets</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning">
-                <div class="card-body text-center">
-                    <i class="fas fa-clock fa-2x mb-2"></i>
-                    <h4>{{ stats.my_open }}</h4>
-                    <p class="mb-0">Open</p>
+            <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
+                <div class="card bg-warning h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h4>{{ stats.my_open }}</h4>
+                        <p class="mb-0">Open</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info">
-                <div class="card-body text-center">
-                    <i class="fas fa-spinner fa-2x mb-2"></i>
-                    <h4>{{ stats.my_in_progress }}</h4>
-                    <p class="mb-0">In Progress</p>
+            <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+                <div class="card bg-info h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-spinner fa-2x mb-2"></i>
+                        <h4>{{ stats.my_in_progress }}</h4>
+                        <p class="mb-0">In Progress</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card bg-secondary">
-                <div class="card-body text-center">
-                    <i class="fas fa-times fa-2x mb-2"></i>
-                    <h4>{{ stats.my_closed }}</h4>
-                    <p class="mb-0">Closed</p>
+            <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
+                <div class="card bg-secondary h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-times fa-2x mb-2"></i>
+                        <h4>{{ stats.my_closed }}</h4>
+                        <p class="mb-0">Closed</p>
+                    </div>
                 </div>
-            </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ url_for('tickets_list', priority='urgent') }}" class="text-decoration-none">
+                <div class="card bg-danger h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h4>{{ stats.urgent if stats.urgent is defined else 0 }}</h4>
+                        <p class="mb-0">Urgent</p>
+                    </div>
+                </div>
+            </a>
         </div>
     {% endif %}
 </div>
@@ -133,7 +160,15 @@
                             {% if current_user.role == 'intern' %}
                             <td>{{ ticket.creator.full_name }}</td>
                             {% else %}
-                            <td>{{ ticket.assignee.full_name if ticket.assignee else 'Unassigned' }}</td>
+                            <td>
+                              {% if ticket.assignees.count() > 0 %}
+                                {% for user in ticket.assignees %}
+                                  <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                              {% else %}
+                                <span class="text-muted">Unassigned</span>
+                              {% endif %}
+                            </td>
                             {% endif %}
                             <td>{{ ticket.updated_at|time_ago }}</td>
                             <td>
@@ -170,3 +205,5 @@
     </div>
 </div>
 {% endblock %}
+
+pip install flask flask-migrate

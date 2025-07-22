@@ -100,6 +100,47 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Notifications polling for IT staff
+    const notificationsDropdown = document.getElementById('notificationsDropdown');
+    const notificationsList = document.getElementById('notifications-list');
+    const notificationBadge = document.getElementById('notification-badge');
+
+    function fetchNotifications() {
+        fetch('/api/notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    notificationsList.innerHTML = '';
+                    let unreadCount = 0;
+                    data.notifications.forEach(n => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<a href="${n.url || '#'}" class="dropdown-item${n.unread ? ' fw-bold' : ''}">
+                            <span class="me-2"><i class="${n.icon || 'fas fa-ticket-alt'}"></i></span>
+                            ${n.message}
+                            <br><span class="text-muted small">${n.time_ago}</span>
+                        </a>`;
+                        notificationsList.appendChild(li);
+                        if (n.unread) unreadCount++;
+                    });
+                    notificationBadge.textContent = unreadCount;
+                    notificationBadge.classList.toggle('d-none', unreadCount === 0);
+                } else {
+                    notificationsList.innerHTML = '<span class="dropdown-item text-muted small">No new notifications</span>';
+                    notificationBadge.classList.add('d-none');
+                }
+            })
+            .catch(() => {
+                notificationsList.innerHTML = '<span class="dropdown-item text-danger small">Error loading notifications</span>';
+                notificationBadge.classList.add('d-none');
+            });
+    }
+
+    if (notificationsDropdown && notificationsList && notificationBadge) {
+        fetchNotifications();
+        setInterval(fetchNotifications, 30000); // Poll every 30 seconds
+        notificationsDropdown.addEventListener('show.bs.dropdown', fetchNotifications);
+    }
 });
 
 // Utility functions

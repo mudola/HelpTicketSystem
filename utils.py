@@ -20,32 +20,18 @@ def get_dashboard_stats(user):
         # For admin, also show tickets that are open but assigned (should be in_progress)
         open_assigned = Ticket.query.filter(
             Ticket.status == 'open',
-            Ticket.assigned_to_id.isnot(None)
+            Ticket.assignees.any(id=user.id)
         ).count()
         stats['open_tickets'] -= open_assigned
         stats['in_progress_tickets'] += open_assigned
         
     elif user.role == 'intern':
         # Intern sees assigned tickets
-        assigned_tickets = Ticket.query.filter_by(assigned_to_id=user.id)
-        stats['assigned_tickets'] = assigned_tickets.count()
-        
-        # Count by status, but treat open+assigned as in_progress
-        stats['my_open_tickets'] = assigned_tickets.filter(
-            Ticket.status == 'open',
-            Ticket.assigned_to_id.is_(None)
-        ).count()
-        
-        stats['my_in_progress'] = (
-            assigned_tickets.filter_by(status='in_progress').count() +
-            assigned_tickets.filter(
-                Ticket.status == 'open',
-                Ticket.assigned_to_id.isnot(None)
-            ).count()
-        )
-        
-        stats['my_resolved'] = assigned_tickets.filter_by(status='resolved').count()
-        stats['my_closed'] = assigned_tickets.filter_by(status='closed').count()
+        stats['assigned_tickets'] = Ticket.query.filter(Ticket.assignees.any(id=user.id)).count()
+        stats['my_open_tickets'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'open').count()
+        stats['my_in_progress'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'in_progress').count()
+        stats['my_resolved'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'resolved').count()
+        stats['my_closed'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'closed').count()
         
     else:  # user role
         # User sees their own tickets
@@ -197,16 +183,10 @@ def get_dashboard_stats(user):
         ).count()
         
     elif user.role == 'intern':
-        stats['assigned_tickets'] = Ticket.query.filter_by(assigned_to_id=user.id).count()
-        stats['my_open_tickets'] = Ticket.query.filter_by(
-            assigned_to_id=user.id, status='open'
-        ).count()
-        stats['my_in_progress'] = Ticket.query.filter_by(
-            assigned_to_id=user.id, status='in_progress'
-        ).count()
-        stats['my_resolved'] = Ticket.query.filter_by(
-            assigned_to_id=user.id, status='resolved'
-        ).count()
+        stats['assigned_tickets'] = Ticket.query.filter(Ticket.assignees.any(id=user.id)).count()
+        stats['my_open_tickets'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'open').count()
+        stats['my_in_progress'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'in_progress').count()
+        stats['my_resolved'] = Ticket.query.filter(Ticket.assignees.any(id=user.id), Ticket.status == 'resolved').count()
         
     else:  # user
         stats['my_tickets'] = Ticket.query.filter_by(created_by_id=user.id).count()

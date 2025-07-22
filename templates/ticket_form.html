@@ -10,8 +10,11 @@
                 <h4><i class="fas fa-plus me-2"></i>{{ title }}</h4>
             </div>
             <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" enctype="multipart/form-data" autocomplete="off">
                     {{ form.hidden_tag() }}
+                    {% if form.errors %}
+                        <div class="alert alert-danger">{{ form.errors }}</div>
+                    {% endif %}
                     
                     <div class="mb-3">
                         {{ form.location.label(class="form-label") }}
@@ -23,9 +26,10 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-3 position-relative">
                         {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control", rows="5") }}
+                        {{ form.description(class="form-control", rows="5", id="description-autocomplete") }}
+                        <div id="desc-autocomplete-list" class="list-group position-absolute w-100"></div>
                         {% if form.description.errors %}
                             {% for error in form.description.errors %}
                                 <div class="text-danger small">{{ error }}</div>
@@ -57,10 +61,11 @@
                     
                     {% if current_user.role in ['admin', 'intern'] %}
                     <div class="mb-3">
-                        {{ form.assigned_to_id.label(class="form-label") }}
-                        {{ form.assigned_to_id(class="form-control") }}
-                        {% if form.assigned_to_id.errors %}
-                            {% for error in form.assigned_to_id.errors %}
+                        {{ form.assignees.label(class="form-label") }}
+                        {{ form.assignees(class="form-control", multiple=True) }}
+                        <small class="form-text text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</small>
+                        {% if form.assignees.errors %}
+                            {% for error in form.assignees.errors %}
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         {% endif %}
@@ -68,8 +73,13 @@
                     {% endif %}
                     
                     <div class="mb-3">
-                        {{ form.attachments.label(class="form-label") }}
-                        {{ form.attachments(class="form-control") }}
+                        <label for="attachments" class="form-label">Attachments</label>
+                        <div id="drop-area" class="border rounded p-3 text-center bg-light" style="cursor:pointer;">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-uon-navy mb-2"></i><br>
+                            <span id="drop-text">Drag & drop files here or click to select</span>
+                            {{ form.attachments(class="form-control d-none", id="attachments") }}
+                        </div>
+                        <div id="file-preview" class="mt-2"></div>
                         {% if form.attachments.errors %}
                             {% for error in form.attachments.errors %}
                                 <div class="text-danger small">{{ error }}</div>
@@ -78,6 +88,42 @@
                         <div class="form-text">
                             Allowed file types: txt, pdf, png, jpg, jpeg, gif, doc, docx, xls, xlsx (Max 16MB)
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Category</label>
+                        <select id="category_id" name="category_id" class="form-control">
+                            <option value="0">Select Category</option>
+                            {% for c in form.category_id.choices[1:] %}
+                                <option value="{{ c[0] }}" data-mis="{{ 'true' if c[1] == 'University MIS System Issue' else 'false' }}" {% if form.category_id.data == c[0] %}selected{% endif %}>{{ c[1] }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.category_id.errors %}
+                            {% for error in form.category_id.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3" id="mis-subcategory-container" style="display:none;">
+                        <label for="mis_subcategory" class="form-label">MIS Subcategory</label>
+                        <select id="mis_subcategory" name="mis_subcategory" class="form-control">
+                            <option value="">Select Subcategory</option>
+                            <option value="AfyaKE">AfyaKE System</option>
+                            <option value="HRMIS">HRMIS</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location_unit" class="form-label">Unit</label>
+                        {{ form.location_unit(class="form-control") }}
+                    </div>
+                    <div class="mb-3" id="location-subunit-group" style="display:none;">
+                        <label for="location_subunit" class="form-label">Subunit</label>
+                        {{ form.location_subunit(class="form-control") }}
+                    </div>
+                    <div class="mb-3" id="location-detail-group" style="display:none;">
+                        <label for="location_detail" class="form-label">Location Detail</label>
+                        {{ form.location_detail(class="form-control") }}
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -91,4 +137,175 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var categorySelect = document.getElementById('category_id');
+    var misSubcategoryContainer = document.getElementById('mis-subcategory-container');
+    var misSubcategorySelect = document.getElementById('mis_subcategory');
+    // Multilevel location dropdown logic
+    const unitSelect = document.getElementById('location_unit');
+    const subunitGroup = document.getElementById('location-subunit-group');
+    const subunitSelect = document.getElementById('location_subunit');
+    const detailGroup = document.getElementById('location-detail-group');
+    const detailSelect = document.getElementById('location_detail');
+
+    const locationData = {
+        'SWA': {
+            'USHR': [
+                'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8', 'Hall 9', 'Swa Headquater', 'Mamlaka Unit', 'Procurement', 'Finance Halls', 'Accounts Catering', 'Hall 12', 'Hall 13', 'Stella Awinja', 'Womens Hall (Hall 20)', 'Security'
+            ],
+            'LSHR': [
+                'SMU', 'Hall 1', 'Hall 2', 'Hall 3', 'Hall 10', 'Hall 11', 'Hall 15', 'Sports department', 'Kitchen 1', 'Internal Audit', 'CCU'
+            ]
+        },
+        'UHS': {
+            '': [
+                'Staff clinic', 'Student clinic', 'CMO', 'Laboratory', 'SickBay', 'ICEC', 'Gender Desk', 'Theatre', 'Accounts'
+            ]
+        },
+        'Confucius': {
+            '': [
+                'Block A', 'Block B', 'Block C'
+            ]
+        }
+    };
+
+    function toggleMISSubcategory() {
+        var selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        if (selectedOption && selectedOption.text === 'University MIS System Issue') {
+            misSubcategoryContainer.style.display = '';
+        } else {
+            misSubcategoryContainer.style.display = 'none';
+            misSubcategorySelect.value = '';
+        }
+    }
+
+    function updateSubunitOptions() {
+        const unit = unitSelect.value;
+        subunitSelect.innerHTML = '<option value="">Select Subunit</option>';
+        detailSelect.innerHTML = '<option value="">Select Location</option>';
+        if (unit === 'SWA') {
+            subunitGroup.style.display = '';
+            Object.keys(locationData['SWA']).forEach(subunit => {
+                const opt = document.createElement('option');
+                opt.value = subunit;
+                opt.text = subunit;
+                subunitSelect.appendChild(opt);
+            });
+            detailGroup.style.display = 'none';
+        } else if (unit === 'UHS' || unit === 'Confucius') {
+            subunitGroup.style.display = 'none';
+            detailGroup.style.display = '';
+            let details = locationData[unit][''];
+            details.forEach(loc => {
+                const opt = document.createElement('option');
+                opt.value = loc;
+                opt.text = loc;
+                detailSelect.appendChild(opt);
+            });
+        } else {
+            subunitGroup.style.display = 'none';
+            detailGroup.style.display = 'none';
+        }
+    }
+
+    function updateDetailOptions() {
+        const unit = unitSelect.value;
+        const subunit = subunitSelect.value;
+        detailSelect.innerHTML = '<option value="">Select Location</option>';
+        if (unit === 'SWA' && subunit) {
+            detailGroup.style.display = '';
+            let details = locationData['SWA'][subunit] || [];
+            details.forEach(loc => {
+                const opt = document.createElement('option');
+                opt.value = loc;
+                opt.text = loc;
+                detailSelect.appendChild(opt);
+            });
+        } else {
+            detailGroup.style.display = 'none';
+        }
+    }
+
+    categorySelect.addEventListener('change', toggleMISSubcategory);
+    toggleMISSubcategory();
+    unitSelect && unitSelect.addEventListener('change', function() {
+        updateSubunitOptions();
+    });
+    subunitSelect && subunitSelect.addEventListener('change', function() {
+        updateDetailOptions();
+    });
+    // Initialize on page load
+    updateSubunitOptions();
+
+    // Drag-and-drop file upload
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('attachments');
+    const filePreview = document.getElementById('file-preview');
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.classList.add('bg-uon-gold');
+    });
+    dropArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('bg-uon-gold');
+    });
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('bg-uon-gold');
+        fileInput.files = e.dataTransfer.files;
+        showFilePreview();
+    });
+    fileInput.addEventListener('change', showFilePreview);
+    function showFilePreview() {
+        filePreview.innerHTML = '';
+        if (fileInput.files.length > 0) {
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const div = document.createElement('div');
+                div.className = 'text-secondary small';
+                div.textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+                filePreview.appendChild(div);
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Autocomplete for Description ---
+    const descInput = document.getElementById('description-autocomplete');
+    const descList = document.getElementById('desc-autocomplete-list');
+    let descHistory = [];
+    fetch("/api/ticket_descriptions")
+        .then(res => res.json())
+        .then(data => { descHistory = data; });
+    descInput.addEventListener('input', function() {
+        const val = this.value.toLowerCase();
+        descList.innerHTML = '';
+        if (val.length < 2) return;
+        const matches = descHistory.filter(d => d.toLowerCase().includes(val)).slice(0, 5);
+        matches.forEach(match => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'list-group-item list-group-item-action';
+            item.textContent = match;
+            item.onclick = () => {
+                descInput.value = match;
+                descList.innerHTML = '';
+            };
+            descList.appendChild(item);
+        });
+    });
+    document.addEventListener('click', function(e) {
+        if (!descList.contains(e.target) && e.target !== descInput) {
+            descList.innerHTML = '';
+        }
+    });
+});
+</script>
 {% endblock %}

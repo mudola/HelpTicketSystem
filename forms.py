@@ -1,17 +1,25 @@
 from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, PasswordField, SubmitField, BooleanField, IntegerField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional
+from wtforms import StringField, TextAreaField, SelectField, PasswordField, SubmitField, BooleanField, IntegerField, SelectMultipleField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, Regexp, NumberRange
 from models import User, Category
 
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Payroll Number', validators=[
+        DataRequired(),
+        Length(min=6, max=6, message='Payroll number must be exactly 6 digits'),
+        Regexp('^[0-9]{6}$', message='Payroll number must be exactly 6 digits')
+    ])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
 
 class RegistrationForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
+    username = StringField('Username', validators=[
+        DataRequired(),
+        Length(min=6, max=6, message='Username must be exactly 6 digits'),
+        Regexp('^[0-9]{6}$', message='Username must be exactly 6 digits')
+    ])
     email = StringField('Email', validators=[DataRequired(), Email()])
     full_name = StringField('Full Name', validators=[DataRequired(), Length(max=100)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
@@ -19,17 +27,33 @@ class RegistrationForm(FlaskForm):
     role = SelectField('Role', choices=[('user', 'User'), ('intern', 'Intern')], default='user')
     submit = SubmitField('Register')
 
+    def validate(self, extra_validators=None):
+        initial = super().validate(extra_validators)
+        # Allow intern registration with default credentials
+        if self.username.data == 'dctraining' and self.password.data == 'Dctraining2023':
+            return True
+        return initial
+
 class TicketForm(FlaskForm):
     location = StringField('Location', validators=[DataRequired(), Length(max=200)])
+    location_unit = SelectField('Unit', choices=[
+        ('', 'Select Unit'),
+        ('SWA', 'SWA'),
+        ('UHS', 'UHS'),
+        ('Confucius', 'Confucius')
+    ])
+    location_subunit = SelectField('Subunit', choices=[('', 'Select Subunit')], validate_choice=False)
+    location_detail = SelectField('Location Detail', choices=[('', 'Select Location')], validate_choice=False)
     description = TextAreaField('Description', validators=[DataRequired()])
     category_id = SelectField('Category', coerce=int, validators=[Optional()])
+    mis_subcategory = StringField('MIS Subcategory')
     priority = SelectField('Priority', choices=[
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
         ('urgent', 'Urgent')
     ], default='medium')
-    assigned_to_id = SelectField('Assign To', coerce=int, validators=[Optional()])
+    assignees = SelectMultipleField('Assign To', coerce=int, validators=[Optional()])
     attachments = FileField('Attachments', validators=[
         FileAllowed(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx'], 
                    'Only text, PDF, image, and document files are allowed!')
@@ -39,7 +63,7 @@ class TicketForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(TicketForm, self).__init__(*args, **kwargs)
         self.category_id.choices = [(0, 'Select Category')] + [(c.id, c.name) for c in Category.query.all()]
-        self.assigned_to_id.choices = [(0, 'Unassigned')] + [(u.id, u.full_name) for u in User.query.filter(User.role.in_(['admin', 'intern'])).all()]
+        self.assignees.choices = [(u.id, u.full_name) for u in User.query.filter(User.role.in_(['admin', 'intern'])).all()]
 
 class CommentForm(FlaskForm):
     content = TextAreaField('Comment', validators=[DataRequired()])
@@ -53,7 +77,7 @@ class TicketUpdateForm(FlaskForm):
         ('resolved', 'Resolved'),
         ('closed', 'Closed')
     ])
-    assigned_to_id = SelectField('Assign To', coerce=int, validators=[Optional()])
+    assignees = SelectMultipleField('Assignees', coerce=int, validators=[Optional()])
     priority = SelectField('Priority', choices=[
         ('low', 'Low'),
         ('medium', 'Medium'),
@@ -64,7 +88,7 @@ class TicketUpdateForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(TicketUpdateForm, self).__init__(*args, **kwargs)
-        self.assigned_to_id.choices = [(0, 'Unassigned')] + [(u.id, u.full_name) for u in User.query.filter(User.role.in_(['admin', 'intern'])).all()]
+        self.assignees.choices = [(u.id, u.full_name) for u in User.query.filter(User.role.in_(['admin', 'intern'])).all()]
 
 class UserManagementForm(FlaskForm):
     user_id = IntegerField('User ID', validators=[DataRequired()])

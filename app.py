@@ -14,8 +14,8 @@ app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://sql8785118:ZzV7IVGefP@sql8.freesqldatabase.com:3306/sql8785118'
-#["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost:3306/helpticket_system"
+# ['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://sql8785118:ZzV7IVGefP@sql8.freesqldatabase.com:3306/sql8785118'
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost:3306/helpticket_system"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -32,6 +32,8 @@ app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in [
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'helpdesk@company.com')
+# Suppress sending emails if not configured (for development)
+app.config['MAIL_SUPPRESS_SEND'] = not (app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD'] and app.config['MAIL_SERVER'] not in ['localhost', '127.0.0.1'])
 
 # Initialize extensions
 db.init_app(app)
@@ -61,10 +63,10 @@ with app.app_context():
     from models import User, Category
     from werkzeug.security import generate_password_hash
 
-    admin = User.query.filter_by(username='admin').first()
+    admin = User.query.filter((User.username == '215030') | (User.email == 'admin@company.com')).first()
     if not admin:
         admin_user = User(
-            username='admin',
+            username='215030',
             email='admin@company.com',
             password_hash=generate_password_hash('admin123'),
             role='admin',
@@ -72,7 +74,7 @@ with app.app_context():
         )
         db.session.add(admin_user)
         db.session.commit()
-        print("Default admin user created (username: admin, password: admin123)")
+        print("Default admin user created (username: 215030, password: admin123)")
 
     # Create default categories
     default_categories = [
@@ -81,6 +83,9 @@ with app.app_context():
         ('Network', 'Internet connectivity, WiFi, network access'),
         ('Email', 'Email setup, issues, and configuration'),
         ('Security', 'Password resets, account access, security concerns'),
+        ('Voip Maintenance', 'VoIP phones, PBX, and related maintenance'),
+        ('Training', 'ICT-related training requests'),
+        ('University MIS System Issue', 'Issues with university management information systems: AfyaKE, HRMIS, Others'),
         ('Other', 'General ICT support requests')
     ]
 
@@ -93,7 +98,7 @@ with app.app_context():
 
 @app.context_processor
 def inject_now():
-    return {'current_year': datetime.now().year}
+    return {'now': datetime.utcnow}
 
 # Import routes
 import routes
