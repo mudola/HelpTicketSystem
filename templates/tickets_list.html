@@ -73,7 +73,7 @@
                     <td>{{ ticket.id }}</td>
                     <td>{{ ticket.title or ticket.description[:40] }}</td>
                     <td><span class="badge badge-status-{{ ticket.status|replace(' ', '_') }}">{{ ticket.status.title() }}</span></td>
-                    <td>{{ ticket.priority.title() }}</td>
+                    <td><span class="badge priority-{{ ticket.priority }}">{{ ticket.priority.title() }}</span></td>
                     <td>
                         {% if ticket.assignees|length > 0 %}
                             {% for user in ticket.assignees %}

@@ -453,6 +453,26 @@ body, html {
     color: white;
 }
 
+.priority-urgent { 
+    background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+    color: white;
+}
+
+.priority-high { 
+    background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+    color: white;
+}
+
+.priority-medium { 
+    background: linear-gradient(135deg, var(--warning) 0%, var(--accent-dark) 100%);
+    color: white;
+}
+
+.priority-low { 
+    background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+    color: white;
+}
+
 /* =====================
    Alerts
    ===================== */
