@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket #{{ ticket.id }} - Print</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .ticket-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+            color: #2c3e50;
+        }
+        .info-value {
+            flex: 1;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .status-closed {
+            background-color: #6c757d;
+        }
+        .priority-urgent {
+            background-color: #dc3545;
+        }
+        .priority-high {
+            background-color: #fd7e14;
+        }
+        .priority-medium {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .priority-low {
+            background-color: #28a745;
+        }
+        .description {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
+        .comments-section {
+            margin-top: 30px;
+        }
+        .comment {
+            border-left: 3px solid #007bff;
+            padding: 10px 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+        }
+        .comment-internal {
+            border-left-color: #ffc107;
+        }
+        .comment-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .attachments {
+            margin: 20px 0;
+        }
+        .attachment-item {
+            padding: 5px 0;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ICT Helpdesk - Ticket Report</h1>
+        <p><strong>Ticket #{{ ticket.id }}</strong></p>
+        <p>Generated: {{ now().strftime('%B %d, %Y at %I:%M %p') }}</p>
+    </div>
+
+    <div class="ticket-info">
+        <div class="info-row">
+            <div class="info-label">Status:</div>
+            <div class="info-value">
+                <span class="status-badge status-{{ ticket.status }}">{{ ticket.status.replace('_', ' ').title() }}</span>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Priority:</div>
+            <div class="info-value">
+                <span class="status-badge priority-{{ ticket.priority }}">{{ ticket.priority.title() }}</span>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Location:</div>
+            <div class="info-value">{{ ticket.location }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Category:</div>
+            <div class="info-value">{{ ticket.category.name if ticket.category else 'N/A' }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Created by:</div>
+            <div class="info-value">{{ ticket.creator.full_name if ticket.creator else 'N/A' }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Created:</div>
+            <div class="info-value">{{ ticket.created_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Assigned to:</div>
+            <div class="info-value">
+                {% if ticket.assignees|length == 0 %}
+                    Unassigned
+                {% else %}
+                    {% for user in ticket.assignees %}{{ user.full_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% if ticket.closed_at %}
+        <div class="info-row">
+            <div class="info-label">Closed:</div>
+            <div class="info-value">{{ ticket.closed_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Closed by:</div>
+            <div class="info-value">{{ ticket.closed_by.full_name if ticket.closed_by else 'N/A' }}</div>
+        </div>
+        {% endif %}
+        {% if ticket.due_date %}
+        <div class="info-row">
+            <div class="info-label">Due date:</div>
+            <div class="info-value">{{ ticket.due_date.strftime('%B %d, %Y at %I:%M %p') }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="description">
+        <h3>Description</h3>
+        <p>{{ ticket.description|nl2br }}</p>
+    </div>
+
+    {% if ticket.attachments %}
+    <div class="attachments">
+        <h3>Attachments</h3>
+        {% for attachment in ticket.attachments %}
+        <div class="attachment-item">
+            • {{ attachment.original_filename }} ({{ "%.1f"|format(attachment.file_size / 1024) }} KB)
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if comments %}
+    <div class="comments-section">
+        <h3>Comments History</h3>
+        {% for comment in comments %}
+        <div class="comment {% if comment.is_internal %}comment-internal{% endif %}">
+            <div class="comment-header">
+                {{ comment.author.full_name if comment.author else 'N/A' }}
+                {% if comment.is_internal %}(Internal){% endif %}
+                - {{ comment.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+            </div>
+            <div>{{ comment.content|nl2br }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>ICT Helpdesk System - Ticket Report</p>
+        <p>This is a system-generated report for Ticket #{{ ticket.id }}</p>
+    </div>
+
+    <script>
+        // Auto-print when page loads
+        window.onload = function() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

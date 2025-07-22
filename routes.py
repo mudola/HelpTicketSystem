@@ -460,6 +460,29 @@ def update_ticket(id):
 
     return redirect(url_for('ticket_detail', id=id))
 
+@app.route('/ticket/<int:id>/print')
+@login_required
+def print_ticket(id):
+    ticket = Ticket.query.get_or_404(id)
+
+    # Check permissions - only allow printing of closed tickets
+    if ticket.status != 'closed':
+        abort(403)
+
+    # Check if user has access to view this ticket
+    if current_user.role == 'user' and ticket.created_by_id != current_user.id:
+        abort(403)
+    elif current_user.role == 'intern' and current_user.id not in [u.id for u in ticket.assignees] and ticket.created_by_id != current_user.id:
+        abort(403)
+
+    # Get all comments (internal comments only for admin/intern)
+    if current_user.role == 'user':
+        comments = Comment.query.filter_by(ticket_id=id, is_internal=False).order_by(Comment.created_at).all()
+    else:
+        comments = Comment.query.filter_by(ticket_id=id).order_by(Comment.created_at).all()
+
+    return render_template('print_ticket.html', ticket=ticket, comments=comments)
+
 @app.route('/ticket/<int:id>/close', methods=['POST'])
 @login_required
 def close_ticket(id):
