@@ -14,6 +14,8 @@ app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
+# Ensure instance directory exists for SQLite
+os.makedirs('instance', exist_ok=True)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///instance/test.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
