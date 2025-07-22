@@ -163,13 +163,13 @@
                 </div>
                 {% endif %}
                 
-                {% if current_user.role == 'intern' and current_user.id in [u.id for u in ticket.assignees] and ticket.status == 'resolved' %}
+                {% if current_user.role == 'intern' and current_user.id in ticket.assignees|map(attribute='id')|list and ticket.status == 'resolved' %}
                 <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
                     <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
                         <i class="fas fa-times me-2"></i>Close Ticket
                     </button>
                 </form>
-                {% elif current_user.role == 'intern' and current_user.id in [u.id for u in ticket.assignees] and ticket.status not in ['resolved', 'closed'] %}
+                {% elif current_user.role == 'intern' and current_user.id in ticket.assignees|map(attribute='id')|list and ticket.status not in ['resolved', 'closed'] %}
                 <div class="alert alert-info">
                     <small>Ticket must be resolved before it can be closed</small>
                 </div>
