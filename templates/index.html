@@ -1,63 +1,48 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICT Helpdesk System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <div class="col-md-6 d-flex align-items-center justify-content-center bg-light">
+                <div class="text-center">
+                    <i class="fas fa-headset fa-5x text-primary mb-4"></i>
+                    <h1 class="display-4 mb-3">ICT Helpdesk</h1>
+                    <p class="lead text-muted">
+                        Your one-stop solution for all ICT support needs
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-center justify-content-center">
+                <div class="card shadow" style="width: 100%; max-width: 400px;">
+                    <div class="card-body p-4">
+                        <h2 class="card-title text-center mb-4">Welcome</h2>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </a>
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Register
+                            </a>
+                        </div>
+                        <hr class="my-4">
+                        <div class="text-center">
+                            <small class="text-muted">
+                                Need help? Contact your IT department.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-{% block content %}
-<div class="container hero-align">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="hero-section py-5">
-                <i class="fas fa-headset display-1 text-primary mb-4"></i>
-                <h1 class="display-4 mb-4">ICT Helpdesk System</h1>
-                <p class="lead mb-4">
-                    Welcome to the ICT Helpdesk System. Submit tickets, track issues, and get support 
-                    from our dedicated IT team.
-                </p>
-                {% if not current_user.is_authenticated %}
-                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-sign-in-alt me-2"></i>Login
-                    </a>
-                    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-lg">
-                        <i class="fas fa-user-plus me-2"></i>Register
-                    </a>
-                </div>
-                {% else %}
-                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% if not current_user.is_authenticated %}
-    <div class="row mt-5">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-ticket-alt fa-3x text-primary mb-3"></i>
-                    <h5 class="card-title">Submit Tickets</h5>
-                    <p class="card-text">Easily submit support requests for hardware, software, and network issues.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-search fa-3x text-warning mb-3"></i>
-                    <h5 class="card-title">Track Progress</h5>
-                    <p class="card-text">Monitor the status of your tickets and receive real-time updates.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-users fa-3x text-success mb-3"></i>
-                    <h5 class="card-title">Expert Support</h5>
-                    <p class="card-text">Get help from our experienced ICT team and interns.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
