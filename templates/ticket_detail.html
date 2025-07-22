@@ -79,7 +79,7 @@
                             {% endif %}<br>
                             {% if ticket.closed_at %}
                             <strong>Closed:</strong> {{ ticket.closed_at|format_datetime }}<br>
-                            <strong>Closed by:</strong> {{ ticket.closed_by.full_name if ticket.closed_by else 'N/A' }}<br>
+                            <strong>Closed by:</strong> {{ ticket.closed_by.full_name if ticket.closed_by else 'System' }}<br>
                             {% endif %}
                             {% if ticket.due_date %}
                             <strong>Due date:</strong> {{ ticket.due_date|format_datetime }}<br>

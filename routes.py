@@ -416,11 +416,13 @@ def update_ticket(id):
             elif not ticket.assignees and old_status == 'in_progress':
                 ticket.status = 'open'
 
-        # Set closed_at timestamp if ticket is closed
+        # Set closed_at timestamp and closed_by if ticket is closed
         if form.status.data == 'closed' and old_status != 'closed':
             ticket.closed_at = datetime.utcnow()
+            ticket.closed_by_id = current_user.id
         elif form.status.data != 'closed':
             ticket.closed_at = None
+            ticket.closed_by_id = None
 
         # Log history for status change
         if old_status != ticket.status:
@@ -516,6 +518,18 @@ def close_ticket(id):
     ticket.closed_at = datetime.utcnow()
     ticket.closed_by_id = current_user.id
     ticket.updated_at = datetime.utcnow()
+    
+    # Log the closure
+    from models import TicketHistory
+    history = TicketHistory(
+        ticket_id=ticket.id,
+        user_id=current_user.id,
+        action='ticket closed',
+        field_changed='status',
+        old_value='resolved',
+        new_value='closed'
+    )
+    db.session.add(history)
     db.session.commit()
 
     flash('Ticket closed successfully', 'success')
