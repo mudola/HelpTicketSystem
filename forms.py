@@ -86,9 +86,17 @@ class TicketUpdateForm(FlaskForm):
     ])
     submit = SubmitField('Update Ticket')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user_role=None, *args, **kwargs):
         super(TicketUpdateForm, self).__init__(*args, **kwargs)
         self.assignees.choices = [(u.id, u.full_name) for u in User.query.filter(User.role.in_(['admin', 'intern'])).all()]
+        
+        # Restrict status choices for interns
+        if user_role == 'intern':
+            self.status.choices = [
+                ('open', 'Open'),
+                ('in_progress', 'In Progress'),
+                ('resolved', 'Resolved')
+            ]
 
 class UserManagementForm(FlaskForm):
     user_id = IntegerField('User ID', validators=[DataRequired()])
