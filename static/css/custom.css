@@ -938,3 +938,43 @@ body, html {
         background: white;
     }
 }
+
+/* Form Enhancements */
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+/* Notification Styles */
+.notifications-dropdown {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-new {
+    background-color: #e8f5e8;
+    font-weight: 500;
+}
+
+.notification-updated {
+    background-color: #fff3cd;
+}
+
+.notification-new:hover,
+.notification-updated:hover {
+    background-color: #f8f9fa;
+}

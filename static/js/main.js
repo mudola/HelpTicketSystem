@@ -108,82 +108,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let lastNotificationCheck = new Date();
 
-    function fetchNotifications() {
-        fetch('/api/notifications')
-            .then(response => response.json())
-            .then(data => {
-                if (data.notifications && data.notifications.length > 0) {
-                    notificationsList.innerHTML = '';
-                    let unreadCount = 0;
-                    data.notifications.forEach(n => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<a href="${n.url || '#'}" class="dropdown-item${n.unread ? ' fw-bold' : ''}">
-                            <span class="me-2"><i class="${n.icon || 'fas fa-ticket-alt'}"></i></span>
-                            ${n.message}
-                            <br><span class="text-muted small">${n.time_ago}</span>
-                        </a>`;
-                        notificationsList.appendChild(li);
-                        if (n.unread) unreadCount++;
-                    });
-                    notificationBadge.textContent = unreadCount;
-                    notificationBadge.classList.toggle('d-none', unreadCount === 0);
-                } else {
-                    notificationsList.innerHTML = '<span class="dropdown-item text-muted small">No new notifications</span>';
-                    notificationBadge.classList.add('d-none');
-                }
-            })
-            .catch(() => {
-                notificationsList.innerHTML = '<span class="dropdown-item text-danger small">Error loading notifications</span>';
-                notificationBadge.classList.add('d-none');
-            });
-    }
-
-    if (notificationsDropdown && notificationsList && notificationBadge) {
-        fetchNotifications();
-        setInterval(fetchNotifications, 30000); // Poll every 30 seconds
-        notificationsDropdown.addEventListener('show.bs.dropdown', fetchNotifications);
-    }
-
-    // Auto-refresh notifications every 30 seconds
-    setInterval(loadNotifications, 30000);
-
-    // Function to show desktop notifications for new tickets
-    function showDesktopNotification(ticket) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            const notification = new Notification(`New Ticket #${ticket.id}`, {
-                body: `${ticket.description}\nPriority: ${ticket.priority.toUpperCase()}`,
-                icon: '/static/favicon.ico',
-                tag: `ticket-${ticket.id}`
-            });
-
-            notification.onclick = function() {
-                window.open(ticket.link, '_blank');
-                notification.close();
-            };
-        }
-    }
-
-    // Request notification permission on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        if ("Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-    });
-
     function loadNotifications() {
+        if (!notificationsDropdown || !notificationsList || !notificationBadge) {
+            return;
+        }
+
         fetch('/api/notifications')
             .then(response => response.json())
             .then(notifications => {
-                const dropdown = document.getElementById('notifications-dropdown');
-                const badge = document.getElementById('notifications-badge');
-
                 if (notifications.length === 0) {
-                    dropdown.innerHTML = '<li><a class="dropdown-item text-muted" href="#">No new notifications</a></li>';
-                    badge.style.display = 'none';
+                    notificationsList.innerHTML = '<li><a class="dropdown-item text-muted" href="#">No new notifications</a></li>';
+                    notificationBadge.style.display = 'none';
                     return;
                 }
 
-                dropdown.innerHTML = '';
+                notificationsList.innerHTML = '';
                 let newTicketCount = 0;
 
                 notifications.forEach(notification => {
@@ -209,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </a>
                     `;
-                    dropdown.appendChild(item);
+                    notificationsList.appendChild(item);
 
                     // Check if this is a new ticket created since last check
                     const ticketTime = new Date(notification.created_at);
@@ -220,8 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 lastNotificationCheck = new Date();
-                badge.textContent = notifications.length;
-                badge.style.display = notifications.length > 0 ? 'inline' : 'none';
+                notificationBadge.textContent = notifications.length;
+                notificationBadge.style.display = notifications.length > 0 ? 'inline' : 'none';
 
                 // Show visual alert for new tickets
                 if (newTicketCount > 0) {
@@ -243,7 +182,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 5000);
                 }
             })
-            .catch(error => console.error('Error loading notifications:', error));
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationsList.innerHTML = '<li><a class="dropdown-item text-danger" href="#">Error loading notifications</a></li>';
+                notificationBadge.style.display = 'none';
+            });
+    }
+
+    if (notificationsDropdown && notificationsList && notificationBadge) {
+        loadNotifications();
+        setInterval(loadNotifications, 30000); // Poll every 30 seconds
+        notificationsDropdown.addEventListener('show.bs.dropdown', loadNotifications);
+    }
+
+    // Request notification permission on page load
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+
+    // Function to show desktop notifications for new tickets
+    function showDesktopNotification(ticket) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            const notification = new Notification(`New Ticket #${ticket.id}`, {
+                body: `${ticket.description}\nPriority: ${ticket.priority.toUpperCase()}`,
+                icon: '/static/favicon.ico',
+                tag: `ticket-${ticket.id}`
+            });
+
+            notification.onclick = function() {
+                window.open(ticket.link, '_blank');
+                notification.close();
+            };
+        }
     }
 });
 
