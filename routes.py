@@ -881,19 +881,41 @@ def api_notifications():
     # Only for IT staff (interns, admins)
     if current_user.role not in ['admin', 'intern']:
         return jsonify([])
-    # Show recent updates for tickets assigned to intern, or all for admin
+    
+    from datetime import datetime, timedelta
+    
+    # Get tickets created in the last 24 hours or recently updated
+    recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+    
     query = Ticket.query
     if current_user.role == 'intern':
-        query = query.join(Ticket.assignees).filter(User.id == current_user.id)
-    # Get recent tickets (updated in last 3 days, or top 10)
-    recent_tickets = query.order_by(Ticket.updated_at.desc()).limit(10).all()
+        # For interns: show tickets assigned to them or newly created tickets
+        query = query.filter(
+            db.or_(
+                Ticket.assignees.any(User.id == current_user.id),
+                Ticket.created_at >= recent_cutoff
+            )
+        )
+    # Admin can see all tickets
+    
+    recent_tickets = query.order_by(Ticket.created_at.desc()).limit(15).all()
     notifications = []
+    
     for t in recent_tickets:
+        # Determine notification type
+        is_new = (datetime.utcnow() - t.created_at).total_seconds() < 3600  # Less than 1 hour old
+        notification_type = 'new' if is_new else 'updated'
+        
         notifications.append({
             'id': t.id,
+            'type': notification_type,
+            'title': f"{'New Ticket Created' if is_new else 'Ticket Updated'}",
             'description': t.description[:60] + ('...' if len(t.description) > 60 else ''),
             'status': t.status,
+            'priority': t.priority,
+            'created_at': t.created_at.strftime('%Y-%m-%d %H:%M'),
             'updated_at': t.updated_at.strftime('%Y-%m-%d %H:%M'),
+            'created_by': t.creator.full_name if t.creator else 'Unknown',
             'link': url_for('ticket_detail', id=t.id)
         })
     return jsonify(notifications)

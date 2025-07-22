@@ -37,13 +37,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fileInfo = document.createElement('small');
                 fileInfo.className = 'text-muted d-block mt-1';
                 fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
-                
+
                 // Remove existing file info
                 const existingInfo = input.parentNode.querySelector('.file-info');
                 if (existingInfo) {
                     existingInfo.remove();
                 }
-                
+
                 fileInfo.className += ' file-info';
                 input.parentNode.appendChild(fileInfo);
             }
@@ -68,13 +68,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const counter = document.createElement('small');
         counter.className = 'text-muted float-end';
         textarea.parentNode.appendChild(counter);
-        
+
         function updateCounter() {
             const remaining = maxLength - textarea.value.length;
             counter.textContent = `${textarea.value.length}/${maxLength}`;
             counter.className = remaining < 50 ? 'text-danger float-end' : 'text-muted float-end';
         }
-        
+
         textarea.addEventListener('input', updateCounter);
         updateCounter();
     });
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const searchTerm = input.value.toLowerCase();
             const table = input.closest('.card').querySelector('table tbody');
             const rows = table.querySelectorAll('tr');
-            
+
             rows.forEach(function(row) {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
@@ -105,6 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const notificationsDropdown = document.getElementById('notificationsDropdown');
     const notificationsList = document.getElementById('notifications-list');
     const notificationBadge = document.getElementById('notification-badge');
+
+    let lastNotificationCheck = new Date();
 
     function fetchNotifications() {
         fetch('/api/notifications')
@@ -141,6 +143,108 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(fetchNotifications, 30000); // Poll every 30 seconds
         notificationsDropdown.addEventListener('show.bs.dropdown', fetchNotifications);
     }
+
+    // Auto-refresh notifications every 30 seconds
+    setInterval(loadNotifications, 30000);
+
+    // Function to show desktop notifications for new tickets
+    function showDesktopNotification(ticket) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            const notification = new Notification(`New Ticket #${ticket.id}`, {
+                body: `${ticket.description}\nPriority: ${ticket.priority.toUpperCase()}`,
+                icon: '/static/favicon.ico',
+                tag: `ticket-${ticket.id}`
+            });
+
+            notification.onclick = function() {
+                window.open(ticket.link, '_blank');
+                notification.close();
+            };
+        }
+    }
+
+    // Request notification permission on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    });
+
+    function loadNotifications() {
+        fetch('/api/notifications')
+            .then(response => response.json())
+            .then(notifications => {
+                const dropdown = document.getElementById('notifications-dropdown');
+                const badge = document.getElementById('notifications-badge');
+
+                if (notifications.length === 0) {
+                    dropdown.innerHTML = '<li><a class="dropdown-item text-muted" href="#">No new notifications</a></li>';
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                dropdown.innerHTML = '';
+                let newTicketCount = 0;
+
+                notifications.forEach(notification => {
+                    const item = document.createElement('li');
+                    const isNew = notification.type === 'new';
+                    const notificationClass = isNew ? 'notification-new' : 'notification-updated';
+                    const icon = isNew ? '🎫' : '📝';
+
+                    item.innerHTML = `
+                        <a class="dropdown-item ${notificationClass}" href="${notification.link}">
+                            <div class="notification-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${icon} Ticket #${notification.id}</strong>
+                                    <small class="badge bg-${notification.priority === 'urgent' ? 'danger' : notification.priority === 'high' ? 'warning' : 'secondary'}">${notification.priority}</small>
+                                </div>
+                                <div class="mt-1">
+                                    <small>${notification.description}</small>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">${isNew ? 'Created' : 'Updated'}: ${isNew ? notification.created_at : notification.updated_at}</small>
+                                    <small class="text-muted">by ${notification.created_by}</small>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                    dropdown.appendChild(item);
+
+                    // Check if this is a new ticket created since last check
+                    const ticketTime = new Date(notification.created_at);
+                    if (isNew && ticketTime > lastNotificationCheck) {
+                        newTicketCount++;
+                        showDesktopNotification(notification);
+                    }
+                });
+
+                lastNotificationCheck = new Date();
+                badge.textContent = notifications.length;
+                badge.style.display = notifications.length > 0 ? 'inline' : 'none';
+
+                // Show visual alert for new tickets
+                if (newTicketCount > 0) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-info alert-dismissible fade show position-fixed';
+                    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                    alertDiv.innerHTML = `
+                        <strong>New Ticket${newTicketCount > 1 ? 's' : ''} Created!</strong>
+                        ${newTicketCount > 1 ? `${newTicketCount} new tickets have` : 'A new ticket has'} been created.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(alertDiv);
+
+                    // Auto-remove after 5 seconds
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 5000);
+                }
+            })
+            .catch(error => console.error('Error loading notifications:', error));
+    }
 });
 
 // Utility functions
@@ -165,9 +269,9 @@ function showNotification(message, type = 'info') {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(alertDiv);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (alertDiv.parentNode) {
@@ -204,13 +308,13 @@ document.addEventListener('keydown', function(event) {
         event.preventDefault();
         window.location.href = '/ticket/new';
     }
-    
+
     // Ctrl+D for dashboard
     if (event.ctrlKey && event.key === 'd') {
         event.preventDefault();
         window.location.href = '/dashboard';
     }
-    
+
     // Escape to close modals
     if (event.key === 'Escape') {
         const openModals = document.querySelectorAll('.modal.show');
