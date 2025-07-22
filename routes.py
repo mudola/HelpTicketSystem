@@ -362,6 +362,17 @@ def update_ticket(id):
         old_status = ticket.status
         old_priority = ticket.priority
         old_assignees = set([u.id for u in ticket.assignees])
+        
+        # Prevent reverting closed tickets
+        if old_status == 'closed' and form.status.data != 'closed':
+            flash('Cannot revert a closed ticket. Closed tickets cannot be reopened.', 'danger')
+            return redirect(url_for('ticket_detail', id=id))
+        
+        # Prevent closing tickets that are not resolved
+        if form.status.data == 'closed' and old_status != 'resolved':
+            flash('Tickets can only be closed if they are resolved first.', 'danger')
+            return redirect(url_for('ticket_detail', id=id))
+        
         ticket.status = form.status.data
         ticket.priority = form.priority.data
         ticket.updated_at = datetime.utcnow()
@@ -459,6 +470,16 @@ def close_ticket(id):
         abort(403)
     elif current_user.role == 'intern' and current_user.id not in [u.id for u in ticket.assignees]:
         abort(403)
+
+    # Check if ticket is already closed
+    if ticket.status == 'closed':
+        flash('Ticket is already closed', 'info')
+        return redirect(url_for('ticket_detail', id=id))
+
+    # Check if ticket is resolved before closing
+    if ticket.status != 'resolved':
+        flash('Ticket must be resolved before it can be closed', 'danger')
+        return redirect(url_for('ticket_detail', id=id))
 
     ticket.status = 'closed'
     ticket.closed_at = datetime.utcnow()

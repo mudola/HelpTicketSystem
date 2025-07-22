@@ -151,28 +151,40 @@
                 <h6 class="mb-0">Quick Actions</h6>
             </div>
             <div class="card-body">
-                {% if current_user.role == 'user' and ticket.created_by_id == current_user.id and ticket.status != 'closed' %}
+                {% if current_user.role == 'user' and ticket.created_by_id == current_user.id and ticket.status == 'resolved' %}
                 <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
                     <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
                         <i class="fas fa-times me-2"></i>Close Ticket
                     </button>
                 </form>
+                {% elif current_user.role == 'user' and ticket.created_by_id == current_user.id and ticket.status not in ['resolved', 'closed'] %}
+                <div class="alert alert-info">
+                    <small>Ticket must be resolved before it can be closed</small>
+                </div>
                 {% endif %}
                 
-                {% if current_user.role == 'intern' and ticket.assigned_to_id == current_user.id and ticket.status != 'closed' %}
+                {% if current_user.role == 'intern' and current_user.id in [u.id for u in ticket.assignees] and ticket.status == 'resolved' %}
                 <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
                     <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
                         <i class="fas fa-times me-2"></i>Close Ticket
                     </button>
                 </form>
+                {% elif current_user.role == 'intern' and current_user.id in [u.id for u in ticket.assignees] and ticket.status not in ['resolved', 'closed'] %}
+                <div class="alert alert-info">
+                    <small>Ticket must be resolved before it can be closed</small>
+                </div>
                 {% endif %}
                 
-                {% if current_user.role == 'admin' and ticket.status != 'closed' %}
+                {% if current_user.role == 'admin' and ticket.status == 'resolved' %}
                 <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
                     <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
                         <i class="fas fa-times me-2"></i>Close Ticket
                     </button>
                 </form>
+                {% elif current_user.role == 'admin' and ticket.status not in ['resolved', 'closed'] %}
+                <div class="alert alert-info">
+                    <small>Ticket must be resolved before it can be closed</small>
+                </div>
                 {% endif %}
                 
                 <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-primary w-100">
@@ -186,14 +198,23 @@
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">Update Ticket</h6>
+                {% if ticket.status == 'closed' %}
+                <small class="text-muted">Closed tickets cannot be modified</small>
+                {% endif %}
             </div>
             <div class="card-body">
+                {% if ticket.status == 'closed' %}
+                <p class="text-muted">This ticket is closed and cannot be modified.</p>
+                {% else %}
                 <form method="POST" action="{{ url_for('update_ticket', id=ticket.id) }}">
                     {{ update_form.hidden_tag() }}
                     
                     <div class="mb-3">
                         {{ update_form.status.label(class="form-label") }}
                         {{ update_form.status(class="form-control") }}
+                        <div class="form-text">
+                            <small class="text-info">Note: Tickets can only be closed if they are resolved first.</small>
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -213,6 +234,7 @@
                         {{ update_form.submit(class="btn btn-warning") }}
                     </div>
                 </form>
+                {% endif %}
             </div>
         </div>
         {% endif %}
