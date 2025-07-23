@@ -74,45 +74,8 @@ def login():
             flash('Invalid username or password', 'danger')
             return redirect(url_for('index'))
 
-    form = LoginForm()
-    if form.validate_on_submit():
-        # Admin login: only allow username '215030' and password 'admin123'
-        if form.username.data == '215030':
-            if form.password.data == 'admin123':
-                user = User.query.filter_by(username='215030').first()
-                if user:
-                    login_user(user, remember=form.remember_me.data)
-                    next_page = request.args.get('next')
-                    if not next_page or not next_page.startswith('/'):
-                        next_page = url_for('dashboard')
-                    return redirect(next_page)
-                else:
-                    flash('Admin user not found in database.', 'danger')
-            else:
-                flash('Invalid admin password.', 'danger')
-            return render_template('login.html', form=form)
-        # Intern default login
-        if form.username.data == 'dctraining' and form.password.data == 'Dctraining2023':
-            user = User.query.filter_by(username='dctraining').first()
-            if user:
-                login_user(user, remember=form.remember_me.data)
-                next_page = request.args.get('next')
-                if not next_page or not next_page.startswith('/'):
-                    next_page = url_for('dashboard')
-                return redirect(next_page)
-            else:
-                flash('Intern user not found in database.', 'danger')
-            return render_template('login.html', form=form)
-        # Payroll login for users/interns
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password_hash, form.password.data):
-            login_user(user, remember=form.remember_me.data)
-            next_page = request.args.get('next')
-            if not next_page or not next_page.startswith('/'):
-                next_page = url_for('dashboard')
-            return redirect(next_page)
-        flash('Invalid username or password', 'danger')
-    return render_template('login.html', form=form)
+    # For GET requests, redirect to index page instead of showing separate login page
+    return redirect(url_for('index'))
 
 @app.route('/logout')
 @login_required
