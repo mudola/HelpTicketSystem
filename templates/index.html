@@ -251,55 +251,249 @@
             text-decoration: underline;
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .split-container {
                 flex-direction: column;
             }
             
             .welcome-panel {
+                flex: 0 0 45vh;
+                min-height: 400px;
+            }
+            
+            .login-panel {
+                flex: 1;
+                min-height: 55vh;
+                padding: 2rem 1.5rem;
+            }
+            
+            .welcome-title {
+                font-size: 2.5rem;
+            }
+            
+            .welcome-description {
+                font-size: 1.05rem;
+                margin-bottom: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .welcome-panel {
                 flex: 0 0 40vh;
+                min-height: 350px;
+                padding: 1.5rem;
             }
             
             .welcome-title {
                 font-size: 2rem;
+                margin-bottom: 1rem;
+            }
+            
+            .welcome-description {
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
+                line-height: 1.5;
             }
             
             .welcome-features {
                 gap: 1rem;
+                margin-top: 1.5rem;
+            }
+            
+            .feature-item {
+                flex: 1;
+                min-width: 80px;
             }
             
             .feature-icon {
                 width: 45px;
                 height: 45px;
                 font-size: 1.2rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .feature-item small {
+                font-size: 0.8rem;
             }
             
             .login-panel {
                 flex: 1;
                 padding: 1.5rem;
+                min-height: 60vh;
+            }
+            
+            .login-form-container {
+                max-width: 100%;
+            }
+            
+            .login-title {
+                font-size: 1.6rem;
+            }
+            
+            .login-subtitle {
+                font-size: 0.85rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .form-control-split {
+                height: 48px;
+                font-size: 0.9rem;
+                padding-left: 40px;
+            }
+            
+            .input-icon-split {
+                left: 12px;
+                font-size: 0.9rem;
+            }
+            
+            .btn-login-split {
+                height: 45px;
+                font-size: 0.95rem;
+            }
+            
+            .form-options-split {
+                font-size: 0.8rem;
+                margin-bottom: 1.25rem;
+            }
+            
+            .register-link {
+                font-size: 0.85rem;
+                padding-top: 0.75rem;
             }
         }
         
         @media (max-width: 480px) {
             .welcome-panel {
                 flex: 0 0 35vh;
+                min-height: 300px;
                 padding: 1rem;
             }
             
             .welcome-title {
                 font-size: 1.8rem;
+                margin-bottom: 0.75rem;
             }
             
             .welcome-description {
+                font-size: 0.95rem;
+                margin-bottom: 1rem;
+                padding: 0 0.5rem;
+            }
+            
+            .welcome-features {
+                gap: 0.75rem;
+                margin-top: 1rem;
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+            
+            .feature-item {
+                min-width: 70px;
+                flex: 0 1 auto;
+            }
+            
+            .feature-icon {
+                width: 40px;
+                height: 40px;
                 font-size: 1rem;
+            }
+            
+            .feature-item small {
+                font-size: 0.75rem;
             }
             
             .login-panel {
                 padding: 1rem;
+                min-height: 65vh;
             }
             
             .login-form-container {
                 max-width: 100%;
+                padding: 0 0.5rem;
+            }
+            
+            .login-title {
+                font-size: 1.5rem;
+            }
+            
+            .login-subtitle {
+                font-size: 0.8rem;
+            }
+            
+            .form-control-split {
+                height: 45px;
+                font-size: 0.85rem;
+                padding-left: 38px;
+            }
+            
+            .input-icon-split {
+                left: 10px;
+                font-size: 0.85rem;
+            }
+            
+            .btn-login-split {
+                height: 42px;
+                font-size: 0.9rem;
+            }
+            
+            .form-options-split {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+                font-size: 0.75rem;
+            }
+            
+            .forgot-link {
+                margin-top: 0.25rem;
+            }
+            
+            .register-link {
+                font-size: 0.8rem;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .welcome-panel {
+                min-height: 280px;
+                padding: 0.75rem;
+            }
+            
+            .welcome-title {
+                font-size: 1.6rem;
+            }
+            
+            .welcome-description {
+                font-size: 0.9rem;
+                padding: 0;
+            }
+            
+            .login-panel {
+                padding: 0.75rem;
+            }
+            
+            .login-form-container {
+                padding: 0;
+            }
+            
+            .form-control-split {
+                height: 42px;
+                padding-left: 35px;
+            }
+            
+            .input-icon-split {
+                left: 8px;
+            }
+            
+            .btn-login-split {
+                height: 40px;
+                font-size: 0.85rem;
             }
         }
     </style>
