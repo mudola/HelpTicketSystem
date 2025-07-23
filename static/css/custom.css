@@ -1647,3 +1647,22 @@ body, html {
         margin-left: 2rem;
     }
 }
+
+.admin-header {
+    background: skyblue;
+    backdrop-filter: blur(10px);
+    border: none;
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-4) 0;
+    height: 50px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    color: white;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: left;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
