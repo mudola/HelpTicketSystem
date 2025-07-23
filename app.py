@@ -2,6 +2,7 @@ import os
 import logging
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_wtf.csrf import CSRFProtect
 from extensions import db, login_manager, mail
 from datetime import datetime
 
@@ -37,6 +38,7 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'helpd
 db.init_app(app)
 login_manager.init_app(app)
 mail.init_app(app)
+csrf = CSRFProtect(app)
 
 
 # Configure login manager
