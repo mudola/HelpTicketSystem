@@ -4,126 +4,139 @@
 {% block title %}Login - ICT Helpdesk{% endblock %}
 
 {% block content %}
-<div class="login-wrapper">
-    <div class="login-background">
-        <div class="login-overlay"></div>
+<div class="login-wrapper-modern">
+    <!-- Animated Background -->
+    <div class="login-background-animated">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+            <div class="shape shape-5"></div>
+        </div>
+        <div class="gradient-overlay"></div>
     </div>
     
     <div class="container-fluid h-100">
         <div class="row h-100 align-items-center justify-content-center">
             <div class="col-lg-4 col-md-6 col-sm-8">
-                <div class="login-card card shadow-lg border-0">
-                    <div class="card-body p-4">
-                        <!-- Logo Section -->
-                        <div class="text-center mb-3">
-                            <div class="login-logo-container">
-                                <img src="{{ url_for('static', filename='uploads/download.jpeg') }}" 
-                                     alt="ICT Helpdesk Logo" 
-                                     class="login-logo">
+                <div class="login-card-modern card shadow-xl border-0">
+                    <div class="card-body p-0">
+                        <!-- Header Section with Logo -->
+                        <div class="login-header-modern">
+                            <div class="login-logo-modern">
+                                <div class="logo-circle">
+                                    <img src="{{ url_for('static', filename='uploads/download.jpeg') }}" 
+                                         alt="ICT Helpdesk Logo" 
+                                         class="logo-image">
+                                </div>
                             </div>
-                            <h3 class="login-title mt-3 mb-1">Welcome Back</h3>
-                            <p class="login-subtitle text-muted">Sign in to your ICT Helpdesk account</p>
+                            <h2 class="login-title-modern">Welcome Back!</h2>
+                            <p class="login-subtitle-modern">Sign in to continue your journey</p>
                         </div>
 
                         <!-- Login Form -->
-                        <form method="POST" class="login-form">
-                            {{ form.hidden_tag() }}
-                            
-                            <div class="form-floating mb-3">
-                                {{ form.username(class="form-control login-input", placeholder="Payroll Number", id="floatingUsername") }}
-                                <label for="floatingUsername">
-                                    <i class="fas fa-user me-2"></i>Payroll Number
-                                </label>
-                                {% if form.username.errors %}
-                                    {% for error in form.username.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                        </div>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-
-                            <div class="form-floating mb-4">
-                                {{ form.password(class="form-control login-input", placeholder="Password", id="floatingPassword") }}
-                                <label for="floatingPassword">
-                                    <i class="fas fa-lock me-2"></i>Password
-                                </label>
-                                <span class="password-toggle" onclick="togglePassword()">
-                                    <i class="fas fa-eye" id="toggleIcon"></i>
-                                </span>
-                                {% if form.password.errors %}
-                                    {% for error in form.password.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                        </div>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div class="form-check">
-                                    {{ form.remember_me(class="form-check-input", id="rememberMe") }}
-                                    <label class="form-check-label" for="rememberMe">
-                                        Remember me
-                                    </label>
+                        <div class="login-form-container">
+                            <form method="POST" class="login-form-modern">
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="form-group-modern mb-4">
+                                    <div class="input-wrapper-modern">
+                                        <i class="fas fa-user input-icon"></i>
+                                        {{ form.username(class="form-control-modern", placeholder="Enter your payroll number", id="username") }}
+                                        <label for="username" class="floating-label">Payroll Number</label>
+                                        <div class="input-border"></div>
+                                    </div>
+                                    {% if form.username.errors %}
+                                        {% for error in form.username.errors %}
+                                            <div class="error-message">
+                                                <i class="fas fa-exclamation-triangle"></i>{{ error }}
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
-                                <a href="#" class="forgot-password-link">
-                                    Forgot password?
-                                </a>
+
+                                <div class="form-group-modern mb-4">
+                                    <div class="input-wrapper-modern">
+                                        <i class="fas fa-lock input-icon"></i>
+                                        {{ form.password(class="form-control-modern", placeholder="Enter your password", id="password") }}
+                                        <label for="password" class="floating-label">Password</label>
+                                        <div class="input-border"></div>
+                                        <span class="password-toggle-modern" onclick="togglePasswordModern()">
+                                            <i class="fas fa-eye" id="toggleIconModern"></i>
+                                        </span>
+                                    </div>
+                                    {% if form.password.errors %}
+                                        {% for error in form.password.errors %}
+                                            <div class="error-message">
+                                                <i class="fas fa-exclamation-triangle"></i>{{ error }}
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-options mb-4">
+                                    <div class="remember-me-modern">
+                                        {{ form.remember_me(class="checkbox-modern", id="rememberMe") }}
+                                        <label for="rememberMe" class="checkbox-label">
+                                            <span class="checkmark"></span>
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <a href="#" class="forgot-link-modern">Forgot password?</a>
+                                </div>
+
+                                <div class="login-buttons mb-4">
+                                    {{ form.submit(class="btn-login-modern btn-primary-modern") }}
+                                    <a href="/" class="btn-secondary-modern">
+                                        <i class="fas fa-arrow-left"></i>Back to Home
+                                    </a>
+                                </div>
+                            </form>
+
+                            <!-- Divider -->
+                            <div class="divider-modern">
+                                <span>OR</span>
                             </div>
 
-                            <div class="d-grid gap-2 mb-3">
-                                {{ form.submit(class="btn btn-primary btn-lg login-btn") }}
-                                <a href="/" class="btn btn-outline-secondary btn-lg">
-                                    <i class="fas fa-arrow-left me-2"></i>Back to Home
+                            <!-- Register Section -->
+                            <div class="register-section-modern">
+                                <p class="register-text-modern">
+                                    Don't have an account?
+                                </p>
+                                <a href="{{ url_for('register') }}" class="btn-register-modern">
+                                    <i class="fas fa-user-plus"></i>Create Account
                                 </a>
                             </div>
-                        </form>
-
-                        <!-- Divider -->
-                        <div class="login-divider">
-                            <span>OR</span>
-                        </div>
-
-                        <!-- Register Link -->
-                        <div class="text-center">
-                            <p class="register-text">
-                                Don't have an account? 
-                                <a href="{{ url_for('register') }}" class="register-link">
-                                    Create one here
-                                </a>
-                            </p>
-                        </div>
-
-                        <!-- Help Section -->
-                        <div class="login-help text-center mt-4">
-                            <small class="text-muted">
-                                <i class="fas fa-question-circle me-1"></i>
-                                Need help? Contact IT Support
-                            </small>
                         </div>
                     </div>
                 </div>
 
-                <!-- Features Section -->
-                <div class="login-features mt-4">
-                    <div class="row text-center">
+                <!-- Feature Cards -->
+                <div class="feature-cards-modern mt-4">
+                    <div class="row g-3">
                         <div class="col-4">
-                            <div class="feature-item">
-                                <i class="fas fa-ticket-alt feature-icon"></i>
-                                <small>Submit Tickets</small>
+                            <div class="feature-card-modern">
+                                <div class="feature-icon-modern feature-icon-blue">
+                                    <i class="fas fa-ticket-alt"></i>
+                                </div>
+                                <span>Submit Tickets</span>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="feature-item">
-                                <i class="fas fa-chart-line feature-icon"></i>
-                                <small>Track Progress</small>
+                            <div class="feature-card-modern">
+                                <div class="feature-icon-modern feature-icon-green">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <span>Track Progress</span>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="feature-item">
-                                <i class="fas fa-headset feature-icon"></i>
-                                <small>Get Support</small>
+                            <div class="feature-card-modern">
+                                <div class="feature-icon-modern feature-icon-purple">
+                                    <i class="fas fa-headset"></i>
+                                </div>
+                                <span>Get Support</span>
                             </div>
                         </div>
                     </div>
@@ -134,9 +147,9 @@
 </div>
 
 <script>
-function togglePassword() {
-    const passwordInput = document.getElementById('floatingPassword');
-    const toggleIcon = document.getElementById('toggleIcon');
+function togglePasswordModern() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIconModern');
     
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
@@ -149,10 +162,63 @@ function togglePassword() {
     }
 }
 
-// Add floating animation to the card
+// Enhanced animations and interactions
 document.addEventListener('DOMContentLoaded', function() {
-    const loginCard = document.querySelector('.login-card');
-    loginCard.style.animation = 'fadeInUp 0.6s ease-out';
+    // Animate login card entrance
+    const loginCard = document.querySelector('.login-card-modern');
+    loginCard.style.opacity = '0';
+    loginCard.style.transform = 'translateY(30px)';
+    
+    setTimeout(() => {
+        loginCard.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        loginCard.style.opacity = '1';
+        loginCard.style.transform = 'translateY(0)';
+    }, 100);
+
+    // Animate feature cards
+    const featureCards = document.querySelectorAll('.feature-card-modern');
+    featureCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 300 + (index * 100));
+    });
+
+    // Form input animations
+    const inputs = document.querySelectorAll('.form-control-modern');
+    inputs.forEach(input => {
+        const wrapper = input.closest('.input-wrapper-modern');
+        const label = wrapper.querySelector('.floating-label');
+        
+        // Check if input has value on load
+        if (input.value) {
+            label.classList.add('active');
+        }
+        
+        input.addEventListener('focus', () => {
+            label.classList.add('active');
+            wrapper.classList.add('focused');
+        });
+        
+        input.addEventListener('blur', () => {
+            if (!input.value) {
+                label.classList.remove('active');
+            }
+            wrapper.classList.remove('focused');
+        });
+        
+        input.addEventListener('input', () => {
+            if (input.value) {
+                label.classList.add('active');
+            } else {
+                label.classList.remove('active');
+            }
+        });
+    });
 });
 </script>
 {% endblock %}
