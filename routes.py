@@ -26,6 +26,54 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
+    # Handle form submission from index page
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember_me = request.form.get('remember_me') == 'y'
+        
+        if username and password:
+            # Admin login: only allow username '215030' and password 'admin123'
+            if username == '215030':
+                if password == 'admin123':
+                    user = User.query.filter_by(username='215030').first()
+                    if user:
+                        login_user(user, remember=remember_me)
+                        next_page = request.args.get('next')
+                        if not next_page or not next_page.startswith('/'):
+                            next_page = url_for('dashboard')
+                        return redirect(next_page)
+                    else:
+                        flash('Admin user not found in database.', 'danger')
+                else:
+                    flash('Invalid admin password.', 'danger')
+                return redirect(url_for('index'))
+            
+            # Intern default login
+            if username == 'dctraining' and password == 'Dctraining2023':
+                user = User.query.filter_by(username='dctraining').first()
+                if user:
+                    login_user(user, remember=remember_me)
+                    next_page = request.args.get('next')
+                    if not next_page or not next_page.startswith('/'):
+                        next_page = url_for('dashboard')
+                    return redirect(next_page)
+                else:
+                    flash('Intern user not found in database.', 'danger')
+                return redirect(url_for('index'))
+            
+            # Payroll login for users/interns
+            user = User.query.filter_by(username=username).first()
+            if user and check_password_hash(user.password_hash, password):
+                login_user(user, remember=remember_me)
+                next_page = request.args.get('next')
+                if not next_page or not next_page.startswith('/'):
+                    next_page = url_for('dashboard')
+                return redirect(next_page)
+            
+            flash('Invalid username or password', 'danger')
+            return redirect(url_for('index'))
+
     form = LoginForm()
     if form.validate_on_submit():
         # Admin login: only allow username '215030' and password 'admin123'
