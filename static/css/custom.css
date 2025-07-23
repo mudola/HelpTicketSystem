@@ -125,14 +125,15 @@ body, html {
     border: none;
     box-shadow: var(--shadow-lg);
     padding: var(--space-4) 0;
+    height: 50px;
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
 .navbar-brand {
-    font-weight: 700;
-    font-size: 1.5rem;
+    font-weight: 400;
+    font-size: 0.9rem;
     color: white !important;
     text-decoration: none;
     display: flex;
@@ -149,7 +150,8 @@ body, html {
 
 .navbar-nav .nav-link {
     color: rgba(255, 255, 255, 0.9) !important;
-    font-weight: 500;
+    font-weight: 300;
+    font-size: 0.875rem;
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius);
     margin: 0 var(--space-1);
@@ -202,6 +204,8 @@ body, html {
     background: var(--primary-50);
     color: var(--primary) !important;
 }
+
+
 
 /* =====================
    Cards & Panels
