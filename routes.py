@@ -689,7 +689,7 @@ def reports():
     # All reference data for dropdowns
     all_users = User.query.order_by(User.full_name).all()
     all_categories = Category.query.order_by(Category.name).all()
-    departments = ['SWA', 'UHS', 'Confucius', 'Chiromo', 'Halls']
+    departments = ['SWA', 'UHS', 'Confucius', 'Chiromo', 'Halls', 'USHR', 'LSHR', 'Staff clinic', 'Student clinic', 'Block A', 'Block B', 'Block C']
 
     # Build ticket query with enhanced filters
     ticket_query = Ticket.query.filter(
@@ -737,7 +737,8 @@ def reports():
     department_stats = {}
     for ticket in tickets:
         dept = 'Other'
-        for d in departments:
+        # Check for more specific subunits first, then general departments
+        for d in ['USHR', 'LSHR', 'Staff clinic', 'Student clinic', 'Block A', 'Block B', 'Block C', 'SWA', 'UHS', 'Confucius', 'Chiromo', 'Halls']:
             if d.lower() in ticket.location.lower():
                 dept = d
                 break
