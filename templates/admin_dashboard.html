@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Admin Dashboard - ICT Helpdesk{% endblock %}
@@ -261,7 +260,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4">
         <div class="card system-health">
             <div class="card-header">
@@ -549,11 +548,11 @@ a:hover .metric-card .metric-content p {
         padding: 1.25rem;
         min-height: 100px;
     }
-    
+
     .metric-number {
         font-size: 1.75rem;
     }
-    
+
     .metric-icon {
         font-size: 2rem;
     }
@@ -563,35 +562,35 @@ a:hover .metric-card .metric-content p {
     .admin-header {
         padding: 1.5rem;
     }
-    
+
     .admin-title {
         font-size: 1.5rem;
     }
-    
+
     .admin-actions {
         margin-top: 1rem;
     }
-    
+
     .metric-card {
         padding: 1rem;
         text-align: center;
         min-height: 90px;
     }
-    
+
     .metric-icon {
         font-size: 1.75rem;
         margin-right: 0;
         margin-bottom: 0.5rem;
     }
-    
+
     .metric-number {
         font-size: 1.5rem;
     }
-    
+
     .alert-items {
         flex-direction: column;
     }
-    
+
     .chart-body {
         padding: 1rem;
     }
@@ -609,136 +608,6 @@ a:hover .metric-card .metric-content p {
 </style>
 
 <script>
-// Chart.js configurations
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Tickets by Day Chart
-    const ticketsByDayCtx = document.getElementById('ticketsByDayChart').getContext('2d');
-    new Chart(ticketsByDayCtx, {
-        type: 'line',
-        data: {
-            labels: {{ tickets_by_day | map(attribute='date') | list | tojson }},
-            datasets: [{
-                label: 'Tickets',
-                data: {{ tickets_by_day | map(attribute='count') | list | tojson }},
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-    
-    // Category Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(categoryCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {{ category_chart | map(attribute='name') | list | tojson }},
-            datasets: [{
-                data: {{ category_chart | map(attribute='count') | list | tojson }},
-                backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0',
-                    '#9966FF'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-    
-    // Department Chart
-    const departmentCtx = document.getElementById('departmentChart').getContext('2d');
-    new Chart(departmentCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ department_chart | map(attribute='department') | list | tojson }},
-            datasets: [{
-                label: 'Tickets',
-                data: {{ department_chart | map(attribute='count') | list | tojson }},
-                backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                borderColor: '#667eea',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-    
-    // Technician Workload Chart
-    const workloadCtx = document.getElementById('workloadChart').getContext('2d');
-    new Chart(workloadCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ technician_workload | map(attribute='full_name') | list | tojson }},
-            datasets: [{
-                label: 'Open',
-                data: {{ technician_workload | map(attribute='open_count') | list | tojson }},
-                backgroundColor: '#ffc107'
-            }, {
-                label: 'In Progress',
-                data: {{ technician_workload | map(attribute='progress_count') | list | tojson }},
-                backgroundColor: '#17a2b8'
-            }, {
-                label: 'Completed',
-                data: {{ technician_workload | map(attribute='completed_count') | list | tojson }},
-                backgroundColor: '#28a745'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    stacked: true
-                },
-                y: {
-                    stacked: true,
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-});
-
 // Real-time updates (optional - could be implemented with WebSocket)
 function updateMetrics() {
     // This could fetch updated metrics via AJAX
