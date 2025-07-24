@@ -112,3 +112,45 @@ class TicketHistory(db.Model):
 
     def __repr__(self):
         return f'<TicketHistory {self.id} on Ticket {self.ticket_id}>'
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=True)
+    type = db.Column(db.String(50), nullable=False)  # new_ticket, ticket_updated, new_comment, ticket_closed, ticket_overdue, etc.
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    email_sent = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    read_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    user = db.relationship('User', backref='notifications')
+    ticket = db.relationship('Ticket', backref='notifications')
+
+    def __repr__(self):
+        return f'<Notification {self.id} for User {self.user_id}>'
+
+class NotificationSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    new_ticket_email = db.Column(db.Boolean, default=True)
+    new_ticket_app = db.Column(db.Boolean, default=True)
+    ticket_updated_email = db.Column(db.Boolean, default=True)
+    ticket_updated_app = db.Column(db.Boolean, default=True)
+    new_comment_email = db.Column(db.Boolean, default=True)
+    new_comment_app = db.Column(db.Boolean, default=True)
+    ticket_closed_email = db.Column(db.Boolean, default=True)
+    ticket_closed_app = db.Column(db.Boolean, default=True)
+    ticket_overdue_email = db.Column(db.Boolean, default=True)
+    ticket_overdue_app = db.Column(db.Boolean, default=True)
+    do_not_disturb = db.Column(db.Boolean, default=False)
+    dnd_start_time = db.Column(db.Time, nullable=True)
+    dnd_end_time = db.Column(db.Time, nullable=True)
+
+    # Relationships
+    user = db.relationship('User', backref='notification_settings', uselist=False)
+
+    def __repr__(self):
+        return f'<NotificationSettings for User {self.user_id}>'

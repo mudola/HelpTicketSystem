@@ -101,97 +101,141 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Notifications polling for IT staff
+    // New notification management system
+document.addEventListener('DOMContentLoaded', function() {
     const notificationsDropdown = document.getElementById('notificationsDropdown');
     const notificationsList = document.getElementById('notifications-list');
     const notificationBadge = document.getElementById('notification-badge');
-
-    let lastNotificationCheck = new Date();
+    const markAllReadBtn = document.getElementById('mark-all-read');
 
     function loadNotifications() {
-        if (!notificationsDropdown || !notificationsList || !notificationBadge) {
-            return;
-        }
-
         fetch('/api/notifications')
             .then(response => response.json())
             .then(notifications => {
-                if (notifications.length === 0) {
-                    notificationsList.innerHTML = '<li><a class="dropdown-item text-muted" href="#">No new notifications</a></li>';
-                    notificationBadge.style.display = 'none';
-                    return;
-                }
-
                 notificationsList.innerHTML = '';
-                let newTicketCount = 0;
 
-                notifications.forEach(notification => {
-                    const item = document.createElement('li');
-                    const isNew = notification.type === 'new';
-                    const notificationClass = isNew ? 'notification-new' : 'notification-updated';
-                    const icon = isNew ? '🎫' : '📝';
+                if (notifications.length === 0) {
+                    notificationsList.innerHTML = '<li><div class="dropdown-item text-muted text-center">No notifications</div></li>';
+                } else {
+                    notifications.forEach(notification => {
+                        const listItem = document.createElement('li');
+                        const isUnread = !notification.is_read;
 
-                    item.innerHTML = `
-                        <a class="dropdown-item ${notificationClass}" href="${notification.link}">
-                            <div class="notification-item">
-                                <div class="d-flex justify-content-between">
-                                    <strong>${icon} Ticket #${notification.id}</strong>
-                                    <small class="badge bg-${notification.priority === 'urgent' ? 'danger' : notification.priority === 'high' ? 'warning' : 'secondary'}">${notification.priority}</small>
-                                </div>
-                                <div class="mt-1">
-                                    <small>${notification.description}</small>
-                                </div>
-                                <div class="d-flex justify-content-between mt-1">
-                                    <small class="text-muted">${isNew ? 'Created' : 'Updated'}: ${isNew ? notification.created_at : notification.updated_at}</small>
-                                    <small class="text-muted">by ${notification.created_by}</small>
+                        listItem.innerHTML = `
+                            <div class="dropdown-item notification-item ${isUnread ? 'notification-unread' : ''}" 
+                                 data-notification-id="${notification.id}" 
+                                 ${notification.link ? `onclick="handleNotificationClick(${notification.id}, '${notification.link}')"` : ''} 
+                                 style="cursor: ${notification.link ? 'pointer' : 'default'};">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0 me-2">
+                                        <i class="fas fa-${getNotificationIcon(notification.type)} ${getNotificationColor(notification.type)}"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 ${isUnread ? 'fw-bold' : ''}">${notification.title}</h6>
+                                        <p class="mb-1 small">${notification.message}</p>
+                                        <small class="text-muted">${notification.created_at}</small>
+                                        ${isUnread ? '<span class="badge bg-primary ms-2">New</span>' : ''}
+                                    </div>
                                 </div>
                             </div>
-                        </a>
-                    `;
-                    notificationsList.appendChild(item);
-
-                    // Check if this is a new ticket created since last check
-                    const ticketTime = new Date(notification.created_at);
-                    if (isNew && ticketTime > lastNotificationCheck) {
-                        newTicketCount++;
-                        showDesktopNotification(notification);
-                    }
-                });
-
-                lastNotificationCheck = new Date();
-                notificationBadge.textContent = notifications.length;
-                notificationBadge.style.display = notifications.length > 0 ? 'inline' : 'none';
-
-                // Show visual alert for new tickets
-                if (newTicketCount > 0) {
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-info alert-dismissible fade show position-fixed';
-                    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                    alertDiv.innerHTML = `
-                        <strong>New Ticket${newTicketCount > 1 ? 's' : ''} Created!</strong>
-                        ${newTicketCount > 1 ? `${newTicketCount} new tickets have` : 'A new ticket has'} been created.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    document.body.appendChild(alertDiv);
-
-                    // Auto-remove after 5 seconds
-                    setTimeout(() => {
-                        if (alertDiv.parentNode) {
-                            alertDiv.remove();
-                        }
-                    }, 5000);
+                        `;
+                        notificationsList.appendChild(listItem);
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error loading notifications:', error);
-                notificationsList.innerHTML = '<li><a class="dropdown-item text-danger" href="#">Error loading notifications</a></li>';
-                notificationBadge.style.display = 'none';
+                notificationsList.innerHTML = '<li><div class="dropdown-item text-danger text-center">Error loading notifications</div></li>';
             });
     }
 
+    function updateUnreadCount() {
+        fetch('/api/notifications/unread_count')
+            .then(response => response.json())
+            .then(data => {
+                const count = data.count;
+                notificationBadge.textContent = count;
+                notificationBadge.style.display = count > 0 ? 'inline' : 'none';
+            })
+            .catch(error => {
+                console.error('Error loading unread count:', error);
+            });
+    }
+
+    function getNotificationIcon(type) {
+        const icons = {
+            'new_ticket': 'plus-circle',
+            'ticket_updated': 'edit',
+            'new_comment': 'comment',
+            'ticket_closed': 'check-circle',
+            'ticket_overdue': 'exclamation-triangle'
+        };
+        return icons[type] || 'bell';
+    }
+
+    function getNotificationColor(type) {
+        const colors = {
+            'new_ticket': 'text-success',
+            'ticket_updated': 'text-warning',
+            'new_comment': 'text-info',
+            'ticket_closed': 'text-success',
+            'ticket_overdue': 'text-danger'
+        };
+        return colors[type] || 'text-primary';
+    }
+
+    // Handle notification click
+    window.handleNotificationClick = function(notificationId, link) {
+        // Mark as read
+        fetch(`/api/notifications/${notificationId}/mark_read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(() => {
+            updateUnreadCount();
+            loadNotifications();
+        });
+
+        // Navigate to link
+        if (link && link !== 'null') {
+            window.location.href = link;
+        }
+    };
+
+    // Mark all as read
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetch('/api/notifications/mark_all_read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateUnreadCount();
+                    loadNotifications();
+                    showNotification(`Marked ${data.marked_count} notifications as read`, 'success');
+                }
+            }).catch(error => {
+                console.error('Error marking notifications as read:', error);
+            });
+        });
+    }
+
     if (notificationsDropdown && notificationsList && notificationBadge) {
+        // Initial load
         loadNotifications();
-        setInterval(loadNotifications, 30000); // Poll every 30 seconds
+        updateUnreadCount();
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            updateUnreadCount();
+        }, 30000);
+
+        // Load notifications when dropdown is opened
         notificationsDropdown.addEventListener('show.bs.dropdown', loadNotifications);
     }
 
@@ -199,25 +243,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
     }
-
-    // Function to show desktop notifications for new tickets
-    function showDesktopNotification(ticket) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            const notification = new Notification(`New Ticket #${ticket.id}`, {
-                body: `${ticket.description}\nPriority: ${ticket.priority.toUpperCase()}`,
-                icon: '/static/favicon.ico',
-                tag: `ticket-${ticket.id}`
-            });
-
-            notification.onclick = function() {
-                window.open(ticket.link, '_blank');
-                notification.close();
-            };
-        }
-    }
 });
 
-// Utility functions
+    // Utility functions
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;

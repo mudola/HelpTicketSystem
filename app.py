@@ -60,7 +60,7 @@ with app.app_context():
     db.create_all()  # Creates tables in the helpticket_system database
 
     # Create a default admin user
-    from models import User, Category
+    from models import User, Category, NotificationSettings
     from werkzeug.security import generate_password_hash
 
     admin = User.query.filter((User.username == '215030') | (User.email == 'admin@company.com')).first()
@@ -73,6 +73,12 @@ with app.app_context():
             full_name='System Administrator'
         )
         db.session.add(admin_user)
+        db.session.flush()
+        
+        # Create default notification settings for admin
+        admin_settings = NotificationSettings(user_id=admin_user.id)
+        db.session.add(admin_settings)
+        
         db.session.commit()
         print("Default admin user created (username: 215030, password: admin123)")
 

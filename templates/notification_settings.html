@@ -1,0 +1,167 @@
+
+{% extends "base.html" %}
+
+{% block title %}Notification Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Notification Settings</h1>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell me-2"></i>Manage Your Notifications
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-desktop me-1"></i>In-App Notifications
+                                </h6>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="new_ticket_app" id="new_ticket_app" {{ 'checked' if settings.new_ticket_app }}>
+                                    <label class="form-check-label" for="new_ticket_app">
+                                        New ticket assignments
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="ticket_updated_app" id="ticket_updated_app" {{ 'checked' if settings.ticket_updated_app }}>
+                                    <label class="form-check-label" for="ticket_updated_app">
+                                        Ticket updates
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="new_comment_app" id="new_comment_app" {{ 'checked' if settings.new_comment_app }}>
+                                    <label class="form-check-label" for="new_comment_app">
+                                        New comments
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="ticket_closed_app" id="ticket_closed_app" {{ 'checked' if settings.ticket_closed_app }}>
+                                    <label class="form-check-label" for="ticket_closed_app">
+                                        Ticket closures
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="ticket_overdue_app" id="ticket_overdue_app" {{ 'checked' if settings.ticket_overdue_app }}>
+                                    <label class="form-check-label" for="ticket_overdue_app">
+                                        Overdue tickets
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-envelope me-1"></i>Email Notifications
+                                </h6>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="new_ticket_email" id="new_ticket_email" {{ 'checked' if settings.new_ticket_email }}>
+                                    <label class="form-check-label" for="new_ticket_email">
+                                        New ticket assignments
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="ticket_updated_email" id="ticket_updated_email" {{ 'checked' if settings.ticket_updated_email }}>
+                                    <label class="form-check-label" for="ticket_updated_email">
+                                        Ticket updates
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="new_comment_email" id="new_comment_email" {{ 'checked' if settings.new_comment_email }}>
+                                    <label class="form-check-label" for="new_comment_email">
+                                        New comments
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="ticket_closed_email" id="ticket_closed_email" {{ 'checked' if settings.ticket_closed_email }}>
+                                    <label class="form-check-label" for="ticket_closed_email">
+                                        Ticket closures
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="ticket_overdue_email" id="ticket_overdue_email" {{ 'checked' if settings.ticket_overdue_email }}>
+                                    <label class="form-check-label" for="ticket_overdue_email">
+                                        Overdue tickets
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-moon me-1"></i>Do Not Disturb
+                                </h6>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="do_not_disturb" id="do_not_disturb" {{ 'checked' if settings.do_not_disturb }}>
+                                    <label class="form-check-label" for="do_not_disturb">
+                                        Enable Do Not Disturb mode
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        When enabled, you won't receive notifications during the specified hours
+                                    </small>
+                                </div>
+                                
+                                <div class="row" id="dnd-times" style="{{ 'display: none;' if not settings.do_not_disturb }}">
+                                    <div class="col-md-3">
+                                        <label for="dnd_start_time" class="form-label">Start Time</label>
+                                        <input type="time" class="form-control" name="dnd_start_time" id="dnd_start_time" 
+                                               value="{{ settings.dnd_start_time.strftime('%H:%M') if settings.dnd_start_time }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="dnd_end_time" class="form-label">End Time</label>
+                                        <input type="time" class="form-control" name="dnd_end_time" id="dnd_end_time" 
+                                               value="{{ settings.dnd_end_time.strftime('%H:%M') if settings.dnd_end_time }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Save Settings
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('do_not_disturb').addEventListener('change', function() {
+    const dndTimes = document.getElementById('dnd-times');
+    if (this.checked) {
+        dndTimes.style.display = 'block';
+    } else {
+        dndTimes.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

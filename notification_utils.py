@@ -1,0 +1,261 @@
+
+from datetime import datetime, time
+from flask import url_for
+from flask_mail import Message
+from app import db, mail
+from models import Notification, NotificationSettings, User, Ticket
+import logging
+
+logger = logging.getLogger(__name__)
+
+class NotificationManager:
+    """Centralized notification management system"""
+    
+    @staticmethod
+    def create_notification(user_id, ticket_id, notification_type, title, message, send_email=True):
+        """Create a new notification for a user"""
+        try:
+            # Get user's notification settings
+            settings = NotificationSettings.query.filter_by(user_id=user_id).first()
+            if not settings:
+                # Create default settings if none exist
+                settings = NotificationSettings(user_id=user_id)
+                db.session.add(settings)
+                db.session.flush()
+            
+            # Check if user wants this type of notification
+            app_enabled = getattr(settings, f"{notification_type}_app", True)
+            email_enabled = getattr(settings, f"{notification_type}_email", True)
+            
+            # Skip if user has disabled all notifications for this type
+            if not app_enabled and not email_enabled:
+                return None
+            
+            # Check do not disturb settings
+            if settings.do_not_disturb and settings.dnd_start_time and settings.dnd_end_time:
+                current_time = datetime.now().time()
+                if settings.dnd_start_time <= current_time <= settings.dnd_end_time:
+                    app_enabled = False
+                    email_enabled = False
+            
+            # Create in-app notification if enabled
+            notification = None
+            if app_enabled:
+                notification = Notification(
+                    user_id=user_id,
+                    ticket_id=ticket_id,
+                    type=notification_type,
+                    title=title,
+                    message=message
+                )
+                db.session.add(notification)
+            
+            # Send email if enabled
+            if email_enabled and send_email:
+                NotificationManager.send_email_notification(user_id, ticket_id, title, message)
+                if notification:
+                    notification.email_sent = True
+            
+            db.session.commit()
+            return notification
+            
+        except Exception as e:
+            logger.error(f"Error creating notification: {e}")
+            db.session.rollback()
+            return None
+    
+    @staticmethod
+    def send_email_notification(user_id, ticket_id, title, message):
+        """Send email notification"""
+        try:
+            user = User.query.get(user_id)
+            ticket = Ticket.query.get(ticket_id) if ticket_id else None
+            
+            if not user or not user.email:
+                return False
+            
+            ticket_link = url_for('ticket_detail', id=ticket_id, _external=True) if ticket_id else ""
+            
+            email_body = f"""
+            <html>
+            <body>
+                <h2>{title}</h2>
+                <p>{message}</p>
+                {f'<p><strong>Ticket ID:</strong> #{ticket.id}</p>' if ticket else ''}
+                {f'<p><strong>Status:</strong> {ticket.status.title()}</p>' if ticket else ''}
+                {f'<p><strong>Priority:</strong> {ticket.priority.title()}</p>' if ticket else ''}
+                {f'<p><a href="{ticket_link}" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">View Ticket</a></p>' if ticket_link else ''}
+                <br>
+                <p><small>ICT Helpdesk System</small></p>
+            </body>
+            </html>
+            """
+            
+            msg = Message(
+                subject=f"ICT Helpdesk - {title}",
+                recipients=[user.email],
+                html=email_body
+            )
+            
+            mail.send(msg)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending email notification: {e}")
+            return False
+    
+    @staticmethod
+    def notify_new_ticket(ticket):
+        """Send notifications for new ticket creation"""
+        # Notify all assignees
+        for assignee in ticket.assignees:
+            NotificationManager.create_notification(
+                user_id=assignee.id,
+                ticket_id=ticket.id,
+                notification_type='new_ticket',
+                title=f'New Ticket Assigned: #{ticket.id}',
+                message=f'A new ticket has been assigned to you by {ticket.creator.full_name if ticket.creator else "Unknown"}.\n\nDescription: {ticket.description[:100]}{"..." if len(ticket.description) > 100 else ""}'
+            )
+        
+        # Notify admins if no assignees
+        if not ticket.assignees:
+            admins = User.query.filter_by(role='admin').all()
+            for admin in admins:
+                NotificationManager.create_notification(
+                    user_id=admin.id,
+                    ticket_id=ticket.id,
+                    notification_type='new_ticket',
+                    title=f'New Unassigned Ticket: #{ticket.id}',
+                    message=f'A new ticket has been created by {ticket.creator.full_name if ticket.creator else "Unknown"} and needs assignment.\n\nDescription: {ticket.description[:100]}{"..." if len(ticket.description) > 100 else ""}'
+                )
+    
+    @staticmethod
+    def notify_ticket_updated(ticket, updated_by):
+        """Send notifications for ticket updates"""
+        recipients = set()
+        
+        # Add ticket creator
+        if ticket.creator:
+            recipients.add(ticket.creator.id)
+        
+        # Add all assignees
+        for assignee in ticket.assignees:
+            recipients.add(assignee.id)
+        
+        # Don't notify the person who made the update
+        recipients.discard(updated_by.id)
+        
+        for user_id in recipients:
+            NotificationManager.create_notification(
+                user_id=user_id,
+                ticket_id=ticket.id,
+                notification_type='ticket_updated',
+                title=f'Ticket Updated: #{ticket.id}',
+                message=f'Ticket "{ticket.description[:50]}{"..." if len(ticket.description) > 50 else ""}" has been updated by {updated_by.full_name}.\n\nStatus: {ticket.status.title()}\nPriority: {ticket.priority.title()}'
+            )
+    
+    @staticmethod
+    def notify_new_comment(ticket, comment_author):
+        """Send notifications for new comments"""
+        recipients = set()
+        
+        # Add ticket creator
+        if ticket.creator:
+            recipients.add(ticket.creator.id)
+        
+        # Add all assignees
+        for assignee in ticket.assignees:
+            recipients.add(assignee.id)
+        
+        # Don't notify the comment author
+        recipients.discard(comment_author.id)
+        
+        for user_id in recipients:
+            NotificationManager.create_notification(
+                user_id=user_id,
+                ticket_id=ticket.id,
+                notification_type='new_comment',
+                title=f'New Comment on Ticket #{ticket.id}',
+                message=f'{comment_author.full_name} added a comment to ticket "{ticket.description[:50]}{"..." if len(ticket.description) > 50 else ""}".'
+            )
+    
+    @staticmethod
+    def notify_ticket_closed(ticket, closed_by):
+        """Send notifications for ticket closure"""
+        if ticket.creator and ticket.creator.id != closed_by.id:
+            NotificationManager.create_notification(
+                user_id=ticket.creator.id,
+                ticket_id=ticket.id,
+                notification_type='ticket_closed',
+                title=f'Ticket Closed: #{ticket.id}',
+                message=f'Your ticket "{ticket.description[:50]}{"..." if len(ticket.description) > 50 else ""}" has been closed by {closed_by.full_name}.'
+            )
+    
+    @staticmethod
+    def notify_ticket_overdue(ticket):
+        """Send notifications for overdue tickets"""
+        # Notify all assignees
+        for assignee in ticket.assignees:
+            NotificationManager.create_notification(
+                user_id=assignee.id,
+                ticket_id=ticket.id,
+                notification_type='ticket_overdue',
+                title=f'Ticket Overdue: #{ticket.id}',
+                message=f'Ticket "{ticket.description[:50]}{"..." if len(ticket.description) > 50 else ""}" is now overdue.\n\nDue date was: {ticket.due_date.strftime("%Y-%m-%d %H:%M") if ticket.due_date else "Not set"}'
+            )
+        
+        # Notify admins
+        admins = User.query.filter_by(role='admin').all()
+        for admin in admins:
+            if admin.id not in [a.id for a in ticket.assignees]:
+                NotificationManager.create_notification(
+                    user_id=admin.id,
+                    ticket_id=ticket.id,
+                    notification_type='ticket_overdue',
+                    title=f'Ticket Overdue: #{ticket.id}',
+                    message=f'Ticket "{ticket.description[:50]}{"..." if len(ticket.description) > 50 else ""}" assigned to {", ".join([a.full_name for a in ticket.assignees])} is overdue.'
+                )
+    
+    @staticmethod
+    def mark_as_read(notification_id, user_id):
+        """Mark a notification as read"""
+        try:
+            notification = Notification.query.filter_by(id=notification_id, user_id=user_id).first()
+            if notification and not notification.is_read:
+                notification.is_read = True
+                notification.read_at = datetime.utcnow()
+                db.session.commit()
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error marking notification as read: {e}")
+            db.session.rollback()
+            return False
+    
+    @staticmethod
+    def mark_all_as_read(user_id):
+        """Mark all notifications as read for a user"""
+        try:
+            notifications = Notification.query.filter_by(user_id=user_id, is_read=False).all()
+            for notification in notifications:
+                notification.is_read = True
+                notification.read_at = datetime.utcnow()
+            db.session.commit()
+            return len(notifications)
+        except Exception as e:
+            logger.error(f"Error marking all notifications as read: {e}")
+            db.session.rollback()
+            return 0
+    
+    @staticmethod
+    def get_user_notifications(user_id, limit=20, unread_only=False):
+        """Get notifications for a user"""
+        query = Notification.query.filter_by(user_id=user_id)
+        if unread_only:
+            query = query.filter_by(is_read=False)
+        return query.order_by(Notification.created_at.desc()).limit(limit).all()
+    
+    @staticmethod
+    def get_unread_count(user_id):
+        """Get count of unread notifications for a user"""
+        return Notification.query.filter_by(user_id=user_id, is_read=False).count()

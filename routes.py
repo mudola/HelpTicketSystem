@@ -11,9 +11,10 @@ import uuid
 from sqlalchemy.orm import joinedload
 
 from app import app, db, mail
-from models import User, Ticket, Comment, Attachment, Category
+from models import User, Ticket, Comment, Attachment, Category, Notification, NotificationSettings
 from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm, AdminUserForm
 from utils import send_notification_email, get_dashboard_stats
+from notification_utils import NotificationManager
 
 @app.route('/')
 def index():
@@ -292,9 +293,8 @@ def new_ticket():
 
         db.session.commit()
 
-        # Send notification email (now for all assignees)
-        if ticket.assignees:
-            send_notification_email(ticket, 'new_ticket')
+        # Send notifications using the new system
+        NotificationManager.notify_new_ticket(ticket)
 
         flash('Ticket created successfully', 'success')
         return redirect(url_for('ticket_detail', id=ticket.id))
@@ -354,8 +354,8 @@ def add_comment(id):
         ticket.updated_at = datetime.utcnow()
         db.session.commit()
 
-        # Send notification email
-        send_notification_email(ticket, 'new_comment')
+        # Send notifications using the new system
+        NotificationManager.notify_new_comment(ticket, current_user)
 
         flash('Comment added successfully', 'success')
 
@@ -482,8 +482,8 @@ def update_ticket(id):
 
         db.session.commit()
 
-        # Send notification email
-        send_notification_email(ticket, 'ticket_updated')
+        # Send notifications using the new system
+        NotificationManager.notify_ticket_updated(ticket, current_user)
 
         flash('Ticket updated successfully', 'success')
 
@@ -549,6 +549,9 @@ def close_ticket(id):
     )
     db.session.add(history)
     db.session.commit()
+
+    # Send notifications using the new system
+    NotificationManager.notify_ticket_closed(ticket, current_user)
 
     flash('Ticket closed successfully', 'success')
     return redirect(url_for('ticket_detail', id=id))
@@ -1057,47 +1060,44 @@ def api_ticket_descriptions():
 @app.route('/api/notifications')
 @login_required
 def api_notifications():
-    # Only for IT staff (interns, admins)
-    if current_user.role not in ['admin', 'intern']:
-        return jsonify([])
-
-    from datetime import datetime, timedelta
-
-    # Get tickets created in the last 24 hours or recently updated
-    recent_cutoff = datetime.utcnow() - timedelta(hours=24)
-
-    query = Ticket.query
-    if current_user.role == 'intern':
-        # For interns: show tickets assigned to them or newly created tickets
-        query = query.filter(
-            db.or_(
-                Ticket.assignees.any(User.id == current_user.id),
-                Ticket.created_at >= recent_cutoff
-            )
-        )
-    # Admin can see all tickets
-
-    recent_tickets = query.order_by(Ticket.created_at.desc()).limit(15).all()
-    notifications = []
-
-    for t in recent_tickets:
-        # Determine notification type
-        is_new = (datetime.utcnow() - t.created_at).total_seconds() < 3600  # Less than 1 hour old
-        notification_type = 'new' if is_new else 'updated'
-
-        notifications.append({
-            'id': t.id,
-            'type': notification_type,
-            'title': f"{'New Ticket Created' if is_new else 'Ticket Updated'}",
-            'description': t.description[:60] + ('...' if len(t.description) > 60 else ''),
-            'status': t.status,
-            'priority': t.priority,
-            'created_at': t.created_at.strftime('%Y-%m-%d %H:%M'),
-            'updated_at': t.updated_at.strftime('%Y-%m-%d %H:%M'),
-            'created_by': t.creator.full_name if t.creator else 'Unknown',
-            'link': url_for('ticket_detail', id=t.id)
+    """Get notifications for current user"""
+    notifications = NotificationManager.get_user_notifications(current_user.id, limit=20)
+    
+    notification_data = []
+    for notification in notifications:
+        notification_data.append({
+            'id': notification.id,
+            'type': notification.type,
+            'title': notification.title,
+            'message': notification.message,
+            'is_read': notification.is_read,
+            'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M'),
+            'ticket_id': notification.ticket_id,
+            'link': url_for('ticket_detail', id=notification.ticket_id) if notification.ticket_id else None
         })
-    return jsonify(notifications)
+    
+    return jsonify(notification_data)
+
+@app.route('/api/notifications/unread_count')
+@login_required
+def api_unread_count():
+    """Get count of unread notifications"""
+    count = NotificationManager.get_unread_count(current_user.id)
+    return jsonify({'count': count})
+
+@app.route('/api/notifications/<int:notification_id>/mark_read', methods=['POST'])
+@login_required
+def api_mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    success = NotificationManager.mark_as_read(notification_id, current_user.id)
+    return jsonify({'success': success})
+
+@app.route('/api/notifications/mark_all_read', methods=['POST'])
+@login_required
+def api_mark_all_read():
+    """Mark all notifications as read"""
+    count = NotificationManager.mark_all_as_read(current_user.id)
+    return jsonify({'success': True, 'marked_count': count})
 
 
 @app.route('/analytics')
@@ -1146,3 +1146,41 @@ def analytics_dashboard():
                          resolved_this_month=resolved_this_month,
                          sla_percentage=sla_percentage,
                          top_categories=top_categories)
+
+@app.route('/notifications/settings', methods=['GET', 'POST'])
+@login_required
+def notification_settings():
+    """Manage notification settings for current user"""
+    settings = NotificationSettings.query.filter_by(user_id=current_user.id).first()
+    if not settings:
+        settings = NotificationSettings(user_id=current_user.id)
+        db.session.add(settings)
+        db.session.commit()
+    
+    if request.method == 'POST':
+        # Update settings from form
+        settings.new_ticket_email = request.form.get('new_ticket_email') == 'on'
+        settings.new_ticket_app = request.form.get('new_ticket_app') == 'on'
+        settings.ticket_updated_email = request.form.get('ticket_updated_email') == 'on'
+        settings.ticket_updated_app = request.form.get('ticket_updated_app') == 'on'
+        settings.new_comment_email = request.form.get('new_comment_email') == 'on'
+        settings.new_comment_app = request.form.get('new_comment_app') == 'on'
+        settings.ticket_closed_email = request.form.get('ticket_closed_email') == 'on'
+        settings.ticket_closed_app = request.form.get('ticket_closed_app') == 'on'
+        settings.ticket_overdue_email = request.form.get('ticket_overdue_email') == 'on'
+        settings.ticket_overdue_app = request.form.get('ticket_overdue_app') == 'on'
+        settings.do_not_disturb = request.form.get('do_not_disturb') == 'on'
+        
+        # Handle time fields
+        dnd_start = request.form.get('dnd_start_time')
+        dnd_end = request.form.get('dnd_end_time')
+        if dnd_start:
+            settings.dnd_start_time = datetime.strptime(dnd_start, '%H:%M').time()
+        if dnd_end:
+            settings.dnd_end_time = datetime.strptime(dnd_end, '%H:%M').time()
+        
+        db.session.commit()
+        flash('Notification settings updated successfully', 'success')
+        return redirect(url_for('notification_settings'))
+    
+    return render_template('notification_settings.html', settings=settings)
