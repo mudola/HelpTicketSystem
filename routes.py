@@ -155,6 +155,108 @@ def admin_dashboard():
         abort(403)
 
     stats = get_dashboard_stats(current_user)
+    
+    # Enhanced metrics for advanced dashboard
+    today = datetime.utcnow().date()
+    
+    # Today's tickets
+    today_tickets = Ticket.query.filter(
+        func.date(Ticket.created_at) == today
+    ).count()
+    
+    # Pending tickets (open + in_progress)
+    pending_tickets = Ticket.query.filter(
+        Ticket.status.in_(['open', 'in_progress'])
+    ).count()
+    
+    # Overdue tickets
+    overdue_tickets = Ticket.query.filter(
+        Ticket.due_date < datetime.utcnow(),
+        Ticket.status.in_(['open', 'in_progress'])
+    ).count()
+    
+    # Average resolution time (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    resolved_tickets = Ticket.query.filter(
+        Ticket.status.in_(['resolved', 'closed']),
+        Ticket.closed_at.isnot(None),
+        Ticket.created_at >= thirty_days_ago
+    ).all()
+    
+    avg_resolution_hours = 0
+    if resolved_tickets:
+        total_hours = sum([(t.closed_at - t.created_at).total_seconds() / 3600 for t in resolved_tickets])
+        avg_resolution_hours = total_hours / len(resolved_tickets)
+    
+    # Most active technician (last 30 days)
+    most_active = db.session.query(
+        User.full_name,
+        func.count(Ticket.id).label('ticket_count')
+    ).join(User.assigned_tickets)\
+     .filter(
+         Ticket.created_at >= thirty_days_ago,
+         User.role.in_(['admin', 'intern'])
+     ).group_by(User.id, User.full_name)\
+     .order_by(func.count(Ticket.id).desc())\
+     .first()
+    
+    # Top recurring issue (last 30 days)
+    top_category = db.session.query(
+        Category.name,
+        func.count(Ticket.id).label('count')
+    ).join(Ticket, Category.id == Ticket.category_id)\
+     .filter(Ticket.created_at >= thirty_days_ago)\
+     .group_by(Category.name)\
+     .order_by(func.count(Ticket.id).desc())\
+     .first()
+    
+    # Chart data - Tickets by day (last 7 days)
+    tickets_by_day = []
+    for i in range(7):
+        date = datetime.utcnow() - timedelta(days=i)
+        count = Ticket.query.filter(
+            func.date(Ticket.created_at) == date.date()
+        ).count()
+        tickets_by_day.append({
+            'date': date.strftime('%a'),
+            'count': count
+        })
+    tickets_by_day.reverse()
+    
+    # Chart data - Tickets by category (last 30 days)
+    category_chart = db.session.query(
+        Category.name,
+        func.count(Ticket.id).label('count')
+    ).join(Ticket, Category.id == Ticket.category_id)\
+     .filter(Ticket.created_at >= thirty_days_ago)\
+     .group_by(Category.name)\
+     .limit(5).all()
+    
+    # Chart data - Tickets by department
+    dept_stats = {}
+    recent_dept_tickets = Ticket.query.filter(
+        Ticket.created_at >= thirty_days_ago
+    ).all()
+    
+    for ticket in recent_dept_tickets:
+        dept = 'Other'
+        for d in ['USHR', 'LSHR', 'Staff clinic', 'Student clinic', 'Block A', 'Block B', 'Block C', 'SWA', 'UHS', 'Confucius']:
+            if d.lower() in ticket.location.lower():
+                dept = d
+                break
+        dept_stats[dept] = dept_stats.get(dept, 0) + 1
+    
+    department_chart = [{'department': k, 'count': v} for k, v in dept_stats.items()]
+    
+    # Technician workload
+    technician_workload = db.session.query(
+        User.full_name,
+        func.sum(func.case([(Ticket.status == 'open', 1)], else_=0)).label('open_count'),
+        func.sum(func.case([(Ticket.status == 'in_progress', 1)], else_=0)).label('progress_count'),
+        func.sum(func.case([(Ticket.status.in_(['resolved', 'closed']), 1)], else_=0)).label('completed_count')
+    ).join(User.assigned_tickets)\
+     .filter(User.role.in_(['admin', 'intern']))\
+     .group_by(User.id, User.full_name).all()
 
     # Get recent activity with assignees eager-loaded
     recent_tickets = Ticket.query.options(joinedload(Ticket.assignees)).order_by(desc(Ticket.updated_at)).limit(10).all()
@@ -164,8 +266,48 @@ def admin_dashboard():
         User.role,
         func.count(User.id).label('count')
     ).group_by(User.role).all()
+    
+    # Recent alerts/notifications
+    alerts = []
+    if overdue_tickets > 0:
+        alerts.append({
+            'type': 'danger',
+            'icon': 'fas fa-exclamation-triangle',
+            'message': f'{overdue_tickets} tickets overdue',
+            'link': url_for('tickets_list', status='overdue')
+        })
+    
+    if today_tickets > 10:
+        alerts.append({
+            'type': 'warning',
+            'icon': 'fas fa-bell',
+            'message': f'{today_tickets} new tickets today',
+            'link': url_for('tickets_list')
+        })
+    
+    if pending_tickets > 20:
+        alerts.append({
+            'type': 'info',
+            'icon': 'fas fa-clipboard-list',
+            'message': f'{pending_tickets} tickets pending',
+            'link': url_for('tickets_list', status='open')
+        })
 
-    return render_template('admin_dashboard.html', stats=stats, recent_tickets=recent_tickets, user_stats=user_stats)
+    return render_template('admin_dashboard.html', 
+                         stats=stats, 
+                         recent_tickets=recent_tickets, 
+                         user_stats=user_stats,
+                         today_tickets=today_tickets,
+                         pending_tickets=pending_tickets,
+                         overdue_tickets=overdue_tickets,
+                         avg_resolution_hours=avg_resolution_hours,
+                         most_active=most_active,
+                         top_category=top_category,
+                         tickets_by_day=tickets_by_day,
+                         category_chart=category_chart,
+                         department_chart=department_chart,
+                         technician_workload=technician_workload,
+                         alerts=alerts)
 
 @app.route('/tickets')
 @login_required
