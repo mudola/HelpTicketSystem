@@ -11,18 +11,88 @@
     </a>
 </div>
 
-<!-- Quick Stats -->
+<!-- Current Ticket Status Cards -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
+        <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
+            <div class="card text-white bg-warning clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-folder-open fa-2x mb-2"></i>
+                    <h4>{{ open_tickets }}</h4>
+                    <p class="mb-0">Open</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+            <div class="card text-white bg-info clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-cog fa-2x mb-2"></i>
+                    <h4>{{ in_progress_tickets }}</h4>
+                    <p class="mb-0">In Progress</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('tickets_list') }}?overdue=true" class="text-decoration-none">
+            <div class="card text-white bg-danger clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h4>{{ overdue_tickets }}</h4>
+                    <p class="mb-0">Overdue</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('tickets_list', status='resolved') }}" class="text-decoration-none">
+            <div class="card text-white bg-success clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-check fa-2x mb-2"></i>
+                    <h4>{{ resolved_tickets }}</h4>
+                    <p class="mb-0">Resolved</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
+            <div class="card text-white bg-secondary clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-lock fa-2x mb-2"></i>
+                    <h4>{{ closed_tickets }}</h4>
+                    <p class="mb-0">Closed</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="card text-white bg-primary clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                    <h4>{{ total_tickets }}</h4>
+                    <p class="mb-0">Total</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="row mb-4">
+    <div class="col-md-4">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
-                <i class="fas fa-ticket-alt fa-3x mb-3"></i>
-                <h2>{{ total_tickets }}</h2>
+                <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                <h2>{{ monthly_total }}</h2>
                 <p class="mb-0">Tickets This Month</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <i class="fas fa-check-circle fa-3x mb-3"></i>
@@ -31,7 +101,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
                 <i class="fas fa-clock fa-3x mb-3"></i>
@@ -41,19 +111,10 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-percentage fa-3x mb-3"></i>
-                <h2>{{ "%.1f"|format((resolved_this_month / total_tickets * 100) if total_tickets > 0 else 0) }}%</h2>
-                <p class="mb-0">Resolution Rate</p>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Top Categories -->
-<div class="row">
+<div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
@@ -75,11 +136,11 @@
                             <tr>
                                 <td>{{ category.name }}</td>
                                 <td>{{ category.count }}</td>
-                                <td>{{ "%.1f"|format((category.count / total_tickets * 100) if total_tickets > 0 else 0) }}%</td>
+                                <td>{{ "%.1f"|format((category.count / monthly_total * 100) if monthly_total > 0 else 0) }}%</td>
                                 <td>
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar" role="progressbar" 
-                                             style="width: {{ (category.count / total_tickets * 100) if total_tickets > 0 else 0 }}%">
+                                             style="width: {{ (category.count / monthly_total * 100) if monthly_total > 0 else 0 }}%">
                                         </div>
                                     </div>
                                 </td>
@@ -101,30 +162,179 @@
                 <h5 class="mb-0">Quick Actions</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
+                <div class="row mb-3">
+                    <div class="col-md-2">
                         <a href="{{ url_for('reports', status='overdue') }}" class="btn btn-danger btn-lg w-100">
-                            <i class="fas fa-exclamation-triangle me-2"></i>View Overdue Tickets
+                            <i class="fas fa-exclamation-triangle me-2"></i>View Overdue
                         </a>
                     </div>
-                    <div class="col-md-3">
-                        <a href="{{ url_for('reports', days=7) }}" class="btn btn-info btn-lg w-100">
-                            <i class="fas fa-calendar-week me-2"></i>Weekly Report
-                        </a>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <a href="{{ url_for('reports', status='open') }}" class="btn btn-warning btn-lg w-100">
                             <i class="fas fa-folder-open me-2"></i>Open Tickets
                         </a>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <a href="{{ url_for('user_management') }}" class="btn btn-secondary btn-lg w-100">
                             <i class="fas fa-users me-2"></i>Manage Users
                         </a>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-info btn-lg w-100" data-bs-toggle="modal" data-bs-target="#dailyTicketsModal">
+                            <i class="fas fa-calendar-day me-2"></i>Daily Tickets
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-success btn-lg w-100" data-bs-toggle="modal" data-bs-target="#weeklyTicketsModal">
+                            <i class="fas fa-calendar-week me-2"></i>Weekly Report
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Daily Tickets Modal -->
+<div class="modal fade" id="dailyTicketsModal" tabindex="-1" aria-labelledby="dailyTicketsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dailyTicketsModalLabel">
+                    <i class="fas fa-calendar-day me-2"></i>Daily Tickets Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                                <h4>{{ daily_total }}</h4>
+                                <p class="mb-0">Total Created Today</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cog fa-2x mb-2"></i>
+                                <h4>{{ daily_in_progress }}</h4>
+                                <p class="mb-0">In Progress</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-check fa-2x mb-2"></i>
+                                <h4>{{ daily_resolved }}</h4>
+                                <p class="mb-0">Resolved Today</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-secondary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-lock fa-2x mb-2"></i>
+                                <h4>{{ daily_closed }}</h4>
+                                <p class="mb-0">Closed Today</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('reports', days=1) }}" class="btn btn-primary">View Detailed Report</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Tickets Modal -->
+<div class="modal fade" id="weeklyTicketsModal" tabindex="-1" aria-labelledby="weeklyTicketsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="weeklyTicketsModalLabel">
+                    <i class="fas fa-calendar-week me-2"></i>Weekly Tickets Report (Last 7 Days)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                                <h4>{{ weekly_total }}</h4>
+                                <p class="mb-0">Total</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-folder-open fa-2x mb-2"></i>
+                                <h4>{{ weekly_open }}</h4>
+                                <p class="mb-0">Open</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card text-white bg-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cog fa-2x mb-2"></i>
+                                <h4>{{ weekly_in_progress }}</h4>
+                                <p class="mb-0">In Progress</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-check fa-2x mb-2"></i>
+                                <h4>{{ weekly_resolved }}</h4>
+                                <p class="mb-0">Resolved</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card text-white bg-secondary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-lock fa-2x mb-2"></i>
+                                <h4>{{ weekly_closed }}</h4>
+                                <p class="mb-0">Closed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card text-white bg-dark">
+                            <div class="card-body text-center">
+                                <i class="fas fa-percentage fa-2x mb-2"></i>
+                                <h4>{{ "%.1f"|format((weekly_closed / weekly_total * 100) if weekly_total > 0 else 0) }}%</h4>
+                                <p class="mb-0">Completion Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('reports', days=7) }}" class="btn btn-primary">View Detailed Report</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.clickable-card {
+    transition: transform 0.2s;
+}
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
 {% endblock %}

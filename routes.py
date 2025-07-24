@@ -1335,8 +1335,57 @@ def analytics_dashboard():
     # Quick stats for last 30 days
     start_date = datetime.utcnow() - timedelta(days=30)
 
-    # Key performance indicators
-    total_tickets = Ticket.query.filter(Ticket.created_at >= start_date).count()
+    # Current ticket status counts
+    total_tickets = Ticket.query.count()
+    open_tickets = Ticket.query.filter_by(status='open').count()
+    in_progress_tickets = Ticket.query.filter_by(status='in_progress').count()
+    resolved_tickets = Ticket.query.filter_by(status='resolved').count()
+    closed_tickets = Ticket.query.filter_by(status='closed').count()
+    
+    # Overdue tickets
+    overdue_tickets = Ticket.query.filter(
+        Ticket.due_date < datetime.utcnow(),
+        Ticket.status.in_(['open', 'in_progress'])
+    ).count()
+
+    # Daily stats (today)
+    today = datetime.utcnow().date()
+    daily_total = Ticket.query.filter(func.date(Ticket.created_at) == today).count()
+    daily_in_progress = Ticket.query.filter(
+        func.date(Ticket.created_at) == today,
+        Ticket.status == 'in_progress'
+    ).count()
+    daily_resolved = Ticket.query.filter(
+        func.date(Ticket.created_at) == today,
+        Ticket.status.in_(['resolved', 'closed'])
+    ).count()
+    daily_closed = Ticket.query.filter(
+        func.date(Ticket.created_at) == today,
+        Ticket.status == 'closed'
+    ).count()
+
+    # Weekly stats (last 7 days)
+    week_start = datetime.utcnow() - timedelta(days=7)
+    weekly_total = Ticket.query.filter(Ticket.created_at >= week_start).count()
+    weekly_open = Ticket.query.filter(
+        Ticket.created_at >= week_start,
+        Ticket.status == 'open'
+    ).count()
+    weekly_in_progress = Ticket.query.filter(
+        Ticket.created_at >= week_start,
+        Ticket.status == 'in_progress'
+    ).count()
+    weekly_resolved = Ticket.query.filter(
+        Ticket.created_at >= week_start,
+        Ticket.status == 'resolved'
+    ).count()
+    weekly_closed = Ticket.query.filter(
+        Ticket.created_at >= week_start,
+        Ticket.status == 'closed'
+    ).count()
+
+    # Key performance indicators for last 30 days
+    monthly_total = Ticket.query.filter(Ticket.created_at >= start_date).count()
     resolved_this_month = Ticket.query.filter(
         Ticket.created_at >= start_date,
         Ticket.status.in_(['resolved', 'closed'])
@@ -1369,6 +1418,21 @@ def analytics_dashboard():
 
     return render_template('analytics_dashboard.html',
                          total_tickets=total_tickets,
+                         open_tickets=open_tickets,
+                         in_progress_tickets=in_progress_tickets,
+                         resolved_tickets=resolved_tickets,
+                         closed_tickets=closed_tickets,
+                         overdue_tickets=overdue_tickets,
+                         daily_total=daily_total,
+                         daily_in_progress=daily_in_progress,
+                         daily_resolved=daily_resolved,
+                         daily_closed=daily_closed,
+                         weekly_total=weekly_total,
+                         weekly_open=weekly_open,
+                         weekly_in_progress=weekly_in_progress,
+                         weekly_resolved=weekly_resolved,
+                         weekly_closed=weekly_closed,
+                         monthly_total=monthly_total,
                          resolved_this_month=resolved_this_month,
                          sla_percentage=sla_percentage,
                          top_categories=top_categories)
