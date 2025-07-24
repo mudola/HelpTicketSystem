@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Admin Dashboard - ICT Helpdesk{% endblock %}
@@ -9,9 +10,9 @@
         <div>
             <h2 class="admin-title">
                 <i class="fas fa-crown me-2 text-warning"></i>
-                Advanced Control Center
+                Admin Control Center
             </h2>
-            <p class="admin-subtitle mb-0">Real-time system monitoring and analytics</p>
+            <p class="admin-subtitle mb-0">System overview and management tools</p>
         </div>
         <div class="admin-actions">
             <div class="btn-group me-2" role="group">
@@ -34,141 +35,117 @@
     </div>
 </div>
 
-<!-- Key Metrics Section -->
-<div class="row mb-4">
-    <!-- Today's Tickets -->
-    <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
-            <div class="metric-card card-primary">
-                <div class="metric-icon">
-                    <i class="fas fa-ticket-alt"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 class="metric-number">{{ today_tickets }}</h3>
-                    <p class="metric-label">Today's Tickets</p>
-                    <div class="metric-indicator 
-                        {% if today_tickets <= 5 %}indicator-green
-                        {% elif today_tickets <= 10 %}indicator-yellow
-                        {% else %}indicator-red{% endif %}">
-                    </div>
-                </div>
+<!-- Real-time Status Banner -->
+<div class="status-banner mb-4">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-server text-success"></i>
+                <span class="status-text">System Online</span>
+                <div class="status-indicator online"></div>
             </div>
-        </a>
-    </div>
-
-    <!-- Pending Tickets -->
-    <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
-            <div class="metric-card card-warning">
-                <div class="metric-icon">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 class="metric-number">{{ pending_tickets }}</h3>
-                    <p class="metric-label">Pending</p>
-                    <div class="metric-indicator 
-                        {% if pending_tickets <= 10 %}indicator-green
-                        {% elif pending_tickets <= 20 %}indicator-yellow
-                        {% else %}indicator-red{% endif %}">
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Overdue Tickets -->
-    <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
-            <div class="metric-card card-danger">
-                <div class="metric-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 class="metric-number">{{ overdue_tickets }}</h3>
-                    <p class="metric-label">Overdue</p>
-                    <div class="metric-indicator 
-                        {% if overdue_tickets == 0 %}indicator-green
-                        {% elif overdue_tickets <= 3 %}indicator-yellow
-                        {% else %}indicator-red{% endif %}">
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Average Resolution Time -->
-    <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <a href="{{ url_for('tickets_list', status='resolved') }}" class="text-decoration-none">
-            <div class="metric-card card-info">
-                <div class="metric-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 class="metric-number">{{ "%.1f"|format(avg_resolution_hours) }}h</h3>
-                    <p class="metric-label">Avg Resolution</p>
-                    <div class="metric-indicator 
-                        {% if avg_resolution_hours <= 24 %}indicator-green
-                        {% elif avg_resolution_hours <= 48 %}indicator-yellow
-                        {% else %}indicator-red{% endif %}">
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Most Active Technician -->
-    <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
-            <div class="metric-card card-success">
-                <div class="metric-icon">
-                    <i class="fas fa-user-cog"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 class="metric-number">{{ most_active.ticket_count if most_active else 0 }}</h3>
-                    <p class="metric-label">{{ most_active.full_name[:10] + '...' if most_active and most_active.full_name|length > 10 else (most_active.full_name if most_active else 'N/A') }}</p>
-                    <div class="metric-indicator indicator-green"></div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Top Recurring Issue -->
-    <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
-            <div class="metric-card card-secondary">
-                <div class="metric-icon">
-                    <i class="fas fa-repeat"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 class="metric-number">{{ top_category.count if top_category else 0 }}</h3>
-                    <p class="metric-label">{{ top_category.name[:12] + '...' if top_category and top_category.name|length > 12 else (top_category.name if top_category else 'N/A') }}</p>
-                    <div class="metric-indicator indicator-yellow"></div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Alerts Section -->
-{% if alerts %}
-<div class="alert-banner mb-4">
-    <div class="alert-header">
-        <i class="fas fa-bell me-2"></i>
-        <strong>System Alerts</strong>
-    </div>
-    <div class="alert-items">
-        {% for alert in alerts %}
-        <div class="alert-item alert-{{ alert.type }}">
-            <i class="{{ alert.icon }} me-2"></i>
-            <span>{{ alert.message }}</span>
-            <a href="{{ alert.link }}" class="btn btn-sm btn-outline-{{ alert.type }} ms-2">View</a>
         </div>
-        {% endfor %}
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-database text-info"></i>
+                <span class="status-text">Database Active</span>
+                <div class="status-indicator online"></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-users text-primary"></i>
+                <span class="status-text">{{ stats.total_users }} Users</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <i class="fas fa-clock text-warning"></i>
+                <span class="status-text" id="current-time"></span>
+            </div>
+        </div>
     </div>
 </div>
-{% endif %}
 
-
+<!-- Enhanced Statistics Cards with Animations -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="stats-card card-primary clickable-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" data-target="{{ stats.total_tickets }}">0</h3>
+                        <p class="stats-label">Total Tickets</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
+            <div class="stats-card card-warning clickable-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" data-target="{{ stats.open_tickets }}">0</h3>
+                        <p class="stats-label">Open Tickets</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (stats.open_tickets / stats.total_tickets * 100) if stats.total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+            <div class="stats-card card-info clickable-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" data-target="{{ stats.in_progress_tickets }}">0</h3>
+                        <p class="stats-label">In Progress</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (stats.in_progress_tickets / stats.total_tickets * 100) if stats.total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
+            <div class="stats-card card-success clickable-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" data-target="{{ stats.closed_tickets }}">0</h3>
+                        <p class="stats-label">Resolved</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (stats.closed_tickets / stats.total_tickets * 100) if stats.total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+</div>
 
 <!-- Quick Actions Panel -->
 <div class="row mb-4">
@@ -181,36 +158,94 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <a href="{{ url_for('new_ticket') }}" class="quick-action-btn">
                             <i class="fas fa-plus-circle"></i>
                             <span>Create Ticket</span>
                         </a>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <a href="{{ url_for('user_management') }}" class="quick-action-btn">
                             <i class="fas fa-user-plus"></i>
-                            <span>Manage Users</span>
+                            <span>Add User</span>
                         </a>
                     </div>
-                    <div class="col-md-3">
-                        <a href="{{ url_for('reports_pdf') }}" class="quick-action-btn">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('reports') }}" class="quick-action-btn">
                             <i class="fas fa-download"></i>
                             <span>Export Report</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="{{ url_for('analytics_dashboard') }}" class="quick-action-btn">
-                            <i class="fas fa-chart-bar"></i>
-                            <span>Analytics</span>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <div class="col-md-4">
+        <div class="card priority-alerts">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Priority Alerts
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert-item">
+                    <div class="alert-icon urgent">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="alert-content">
+                        <span class="alert-number">{{ stats.urgent_tickets }}</span>
+                        <span class="alert-label">Urgent Tickets</span>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon overdue">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="alert-content">
+                        <span class="alert-number">0</span>
+                        <span class="alert-label">Overdue Tasks</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Performance Dashboard -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card team-performance">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2 text-info"></i>Team Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for role_stat in user_stats %}
+                <div class="team-member-row">
+                    <div class="team-role">
+                        <span class="role-badge role-{{ role_stat.role }}">
+                            {% if role_stat.role == 'admin' %}
+                                <i class="fas fa-crown"></i>
+                            {% elif role_stat.role == 'intern' %}
+                                <i class="fas fa-user-graduate"></i>
+                            {% else %}
+                                <i class="fas fa-user"></i>
+                            {% endif %}
+                            {{ role_stat.role.title() }}s
+                        </span>
+                    </div>
+                    <div class="team-count">
+                        <span class="count-number">{{ role_stat.count }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
         <div class="card system-health">
             <div class="card-header">
                 <h5 class="mb-0">
@@ -237,11 +272,11 @@
                     </div>
                 </div>
                 <div class="health-metric">
-                    <div class="metric-label">Active Users</div>
+                    <div class="metric-label">Database Health</div>
                     <div class="metric-value">
-                        <span class="value-number">{{ stats.total_users }}</span>
+                        <span class="value-number">Good</span>
                         <div class="metric-bar">
-                            <div class="metric-fill" style="width: 75%"></div>
+                            <div class="metric-fill" style="width: 90%"></div>
                         </div>
                     </div>
                 </div>
@@ -250,10 +285,8 @@
     </div>
 </div>
 
-
-
 <style>
-/* Enhanced Styles for Advanced Dashboard */
+/* Admin Dashboard Custom Styles */
 .admin-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -273,144 +306,135 @@
     font-size: 1.1rem;
 }
 
-/* Metric Cards */
-.metric-card {
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+}
+
+/* Status Banner */
+.status-banner {
     background: white;
     border-radius: 1rem;
     padding: 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.status-item {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: auto;
+}
+
+.status-indicator.online {
+    background: #22c55e;
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Enhanced Stats Cards */
+.stats-card {
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: white;
+    cursor: pointer;
+}
+
+.stats-card:hover,
+.clickable-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+.clickable-card {
     position: relative;
-    transition: transform 0.3s ease;
-    min-height: 120px;
 }
 
-.metric-card:hover {
-    transform: translateY(-5px);
+.clickable-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-a .metric-card:hover {
-    box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+.clickable-card:hover::after {
+    opacity: 1;
 }
 
-a:hover .metric-card .metric-content h3,
-a:hover .metric-card .metric-content p {
-    color: inherit;
+.clickable-card:active {
+    transform: translateY(-4px);
+    transition: transform 0.1s ease;
 }
 
-.metric-card.card-primary { border-left: 4px solid #007bff; }
-.metric-card.card-warning { border-left: 4px solid #ffc107; }
-.metric-card.card-danger { border-left: 4px solid #dc3545; }
-.metric-card.card-info { border-left: 4px solid #17a2b8; }
-.metric-card.card-success { border-left: 4px solid #28a745; }
-.metric-card.card-secondary { border-left: 4px solid #6c757d; }
+.stats-card.card-primary { border-left: 4px solid #007bff; }
+.stats-card.card-warning { border-left: 4px solid #ffc107; }
+.stats-card.card-info { border-left: 4px solid #17a2b8; }
+.stats-card.card-success { border-left: 4px solid #28a745; }
 
-.metric-icon {
+.stats-card .card-body {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.stats-icon {
     font-size: 2.5rem;
     margin-right: 1rem;
-    opacity: 0.7;
-    color: #667eea;
+    opacity: 0.8;
 }
 
-.metric-content {
+.stats-content {
     flex: 1;
 }
 
-.metric-number {
+.stats-number {
     font-size: 2rem;
     font-weight: bold;
     margin: 0;
     color: #333;
 }
 
-.metric-label {
+.stats-label {
     color: #666;
     margin: 0;
     font-size: 0.9rem;
-    font-weight: 500;
 }
 
-.metric-indicator {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+.stats-progress {
+    margin-top: 0.5rem;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-.indicator-green { background: #28a745; }
-.indicator-yellow { background: #ffc107; }
-.indicator-red { background: #dc3545; }
-
-/* Alert Banner */
-.alert-banner {
-    background: white;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-}
-
-.alert-header {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-.alert-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.alert-item {
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-}
-
-.alert-item.alert-danger {
-    background: rgba(220, 53, 69, 0.1);
-    color: #721c24;
-    border: 1px solid rgba(220, 53, 69, 0.2);
-}
-
-.alert-item.alert-warning {
-    background: rgba(255, 193, 7, 0.1);
-    color: #856404;
-    border: 1px solid rgba(255, 193, 7, 0.2);
-}
-
-.alert-item.alert-info {
-    background: rgba(23, 162, 184, 0.1);
-    color: #0c5460;
-    border: 1px solid rgba(23, 162, 184, 0.2);
-}
-
-/* Chart Cards */
-.chart-card {
-    background: white;
-    border-radius: 1rem;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-    margin-bottom: 1.5rem;
-}
-
-.chart-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.chart-header h5 {
-    margin: 0;
-    color: #333;
-    font-weight: 600;
-}
-
-.chart-body {
-    padding: 1.5rem;
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 1s ease;
 }
 
 /* Quick Actions */
@@ -430,7 +454,6 @@ a:hover .metric-card .metric-content p {
     text-decoration: none;
     color: #333;
     transition: all 0.3s ease;
-    height: 100%;
 }
 
 .quick-action-btn:hover {
@@ -444,19 +467,105 @@ a:hover .metric-card .metric-content p {
     margin-bottom: 0.5rem;
 }
 
-/* System Health */
-.system-health {
+/* Priority Alerts */
+.priority-alerts {
     border: none;
     border-radius: 1rem;
     box-shadow: 0 2px 20px rgba(0,0,0,0.08);
 }
 
-.health-metric {
-    margin-bottom: 1.5rem;
+.alert-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
 }
 
-.health-metric:last-child {
-    margin-bottom: 0;
+.alert-item:last-child {
+    border-bottom: none;
+}
+
+.alert-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.alert-icon.urgent {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.alert-icon.overdue {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.alert-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+}
+
+.alert-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Team Performance */
+.team-performance, .system-health {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.team-member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.team-member-row:last-child {
+    border-bottom: none;
+}
+
+.role-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.role-badge.role-admin {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.role-badge.role-intern {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.role-badge.role-user {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+}
+
+.count-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* System Health Metrics */
+.health-metric {
+    margin-bottom: 1.5rem;
 }
 
 .metric-label {
@@ -492,17 +601,27 @@ a:hover .metric-card .metric-content p {
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .metric-card {
+    .stats-card .card-body {
         padding: 1.25rem;
-        min-height: 100px;
     }
-
-    .metric-number {
+    
+    .stats-number {
         font-size: 1.75rem;
     }
-
-    .metric-icon {
+    
+    .stats-icon {
         font-size: 2rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .admin-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group {
+        width: 100%;
     }
 }
 
@@ -510,62 +629,99 @@ a:hover .metric-card .metric-content p {
     .admin-header {
         padding: 1.5rem;
     }
-
+    
     .admin-title {
         font-size: 1.5rem;
     }
-
+    
     .admin-actions {
         margin-top: 1rem;
     }
-
-    .metric-card {
+    
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .stats-card .card-body {
         padding: 1rem;
         text-align: center;
-        min-height: 90px;
     }
-
-    .metric-icon {
+    
+    .stats-icon {
         font-size: 1.75rem;
         margin-right: 0;
         margin-bottom: 0.5rem;
     }
-
-    .metric-number {
+    
+    .stats-number {
         font-size: 1.5rem;
     }
+    
+    .stats-label {
+        font-size: 0.8rem;
+    }
+}
 
-    .alert-items {
+@media (max-width: 576px) {
+    .stats-card .card-body {
+        display: block;
+        text-align: center;
+        padding: 0.75rem;
+    }
+    
+    .stats-icon {
+        display: block;
+        margin: 0 auto 0.5rem;
+        font-size: 1.5rem;
+    }
+    
+    .stats-number {
+        font-size: 1.25rem;
+    }
+    
+    .admin-header .d-flex {
         flex-direction: column;
+        text-align: center;
     }
-
-    .chart-body {
-        padding: 1rem;
+    
+    .admin-actions {
+        margin-top: 1rem;
+        width: 100%;
     }
-}
-
-.btn-pulse {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
 }
 </style>
 
 <script>
-// Real-time updates (optional - could be implemented with WebSocket)
-function updateMetrics() {
-    // This could fetch updated metrics via AJAX
-    // For now, we'll just refresh the page every 5 minutes
-    setTimeout(() => {
-        location.reload();
-    }, 300000); // 5 minutes
+// Real-time clock
+function updateTime() {
+    const now = new Date();
+    document.getElementById('current-time').textContent = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// Animated counter
+function animateCounter(element, target) {
+    let current = 0;
+    const increment = target / 50;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+    }, 30);
 }
 
-// Initialize real-time updates
-updateMetrics();
+// Initialize counters
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.stats-number').forEach(element => {
+        const target = parseInt(element.getAttribute('data-target'));
+        animateCounter(element, target);
+    });
+});
 </script>
 {% endblock %}
