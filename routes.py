@@ -249,11 +249,12 @@ def admin_dashboard():
     department_chart = [{'department': k, 'count': v} for k, v in dept_stats.items()]
     
     # Technician workload
+    from sqlalchemy import case
     technician_workload = db.session.query(
         User.full_name,
-        func.sum(func.case([(Ticket.status == 'open', 1)], else_=0)).label('open_count'),
-        func.sum(func.case([(Ticket.status == 'in_progress', 1)], else_=0)).label('progress_count'),
-        func.sum(func.case([(Ticket.status.in_(['resolved', 'closed']), 1)], else_=0)).label('completed_count')
+        func.sum(case((Ticket.status == 'open', 1), else_=0)).label('open_count'),
+        func.sum(case((Ticket.status == 'in_progress', 1), else_=0)).label('progress_count'),
+        func.sum(case((Ticket.status.in_(['resolved', 'closed']), 1), else_=0)).label('completed_count')
     ).join(User.assigned_tickets)\
      .filter(User.role.in_(['admin', 'intern']))\
      .group_by(User.id, User.full_name).all()
