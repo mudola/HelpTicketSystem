@@ -1163,17 +1163,22 @@ def notification_settings():
         # Update settings from form
         form.populate_obj(settings)
         
-        # Handle time fields specially
-        if form.dnd_start_time.data:
+        # Handle time fields specially - set to None if empty
+        if form.dnd_start_time.data and form.dnd_start_time.data.strip():
             try:
                 settings.dnd_start_time = datetime.strptime(form.dnd_start_time.data, '%H:%M').time()
             except ValueError:
-                pass
-        if form.dnd_end_time.data:
+                settings.dnd_start_time = None
+        else:
+            settings.dnd_start_time = None
+            
+        if form.dnd_end_time.data and form.dnd_end_time.data.strip():
             try:
                 settings.dnd_end_time = datetime.strptime(form.dnd_end_time.data, '%H:%M').time()
             except ValueError:
-                pass
+                settings.dnd_end_time = None
+        else:
+            settings.dnd_end_time = None
         
         db.session.commit()
         flash('Notification settings updated successfully', 'success')
