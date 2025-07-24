@@ -29,12 +29,14 @@ class NotificationManager:
             
             # Skip if user has disabled all notifications for this type
             if not app_enabled and not email_enabled:
+                logger.info(f"User {user_id} has disabled {notification_type} notifications")
                 return None
             
             # Check do not disturb settings
             if settings.do_not_disturb and settings.dnd_start_time and settings.dnd_end_time:
                 current_time = datetime.now().time()
                 if settings.dnd_start_time <= current_time <= settings.dnd_end_time:
+                    logger.info(f"User {user_id} is in do not disturb mode")
                     app_enabled = False
                     email_enabled = False
             
@@ -49,12 +51,13 @@ class NotificationManager:
                     message=message
                 )
                 db.session.add(notification)
+                logger.info(f"Created in-app notification for user {user_id}: {title}")
             
             # Send email if enabled
             if email_enabled and send_email:
-                NotificationManager.send_email_notification(user_id, ticket_id, title, message)
+                email_sent = NotificationManager.send_email_notification(user_id, ticket_id, title, message)
                 if notification:
-                    notification.email_sent = True
+                    notification.email_sent = email_sent
             
             db.session.commit()
             return notification
@@ -68,6 +71,13 @@ class NotificationManager:
     def send_email_notification(user_id, ticket_id, title, message):
         """Send email notification"""
         try:
+            from app import app
+            
+            # Skip email if mail is not properly configured
+            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
+                logger.warning("Email not configured - skipping email notification")
+                return False
+            
             user = User.query.get(user_id)
             ticket = Ticket.query.get(ticket_id) if ticket_id else None
             

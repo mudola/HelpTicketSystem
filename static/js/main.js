@@ -108,44 +108,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const notificationBadge = document.getElementById('notification-badge');
     const markAllReadBtn = document.getElementById('mark-all-read');
 
+    // Load notifications
     function loadNotifications() {
+        console.log('Loading notifications...');
         fetch('/api/notifications')
-            .then(response => response.json())
+            .then(response => {
+                console.log('Notifications response:', response.status);
+                return response.json();
+            })
             .then(notifications => {
-                notificationsList.innerHTML = '';
-
+                console.log('Received notifications:', notifications);
                 if (notifications.length === 0) {
-                    notificationsList.innerHTML = '<li><div class="dropdown-item text-muted text-center">No notifications</div></li>';
-                } else {
-                    notifications.forEach(notification => {
-                        const listItem = document.createElement('li');
-                        const isUnread = !notification.is_read;
-
-                        listItem.innerHTML = `
-                            <div class="dropdown-item notification-item ${isUnread ? 'notification-unread' : ''}" 
-                                 data-notification-id="${notification.id}" 
-                                 ${notification.link ? `onclick="handleNotificationClick(${notification.id}, '${notification.link}')"` : ''} 
-                                 style="cursor: ${notification.link ? 'pointer' : 'default'};">
-                                <div class="d-flex">
-                                    <div class="flex-shrink-0 me-2">
-                                        <i class="fas fa-${getNotificationIcon(notification.type)} ${getNotificationColor(notification.type)}"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1 ${isUnread ? 'fw-bold' : ''}">${notification.title}</h6>
-                                        <p class="mb-1 small">${notification.message}</p>
-                                        <small class="text-muted">${notification.created_at}</small>
-                                        ${isUnread ? '<span class="badge bg-primary ms-2">New</span>' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        notificationsList.appendChild(listItem);
-                    });
+                    notificationsList.innerHTML = `
+                        <li class="text-center py-3">
+                            <span class="text-muted">No notifications</span>
+                        </li>
+                    `;
+                    return;
                 }
+
+                notificationsList.innerHTML = notifications.map(notification => `
+                    <li>
+                        <a class="dropdown-item notification-item ${notification.is_read ? '' : 'notification-unread'}" 
+                           href="#" onclick="handleNotificationClick(${notification.id}, '${notification.link}')">
+                            <h6 class="mb-1">${notification.title}</h6>
+                            <p class="mb-1">${notification.message}</p>
+                            <small class="text-muted">${notification.created_at}</small>
+                        </a>
+                    </li>
+                `).join('');
             })
             .catch(error => {
                 console.error('Error loading notifications:', error);
-                notificationsList.innerHTML = '<li><div class="dropdown-item text-danger text-center">Error loading notifications</div></li>';
+                notificationsList.innerHTML = `
+                    <li class="text-center py-3">
+                        <span class="text-danger">Error loading notifications</span>
+                    </li>
+                `;
             });
     }
 
