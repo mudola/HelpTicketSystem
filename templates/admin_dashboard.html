@@ -39,102 +39,114 @@
 <div class="row mb-4">
     <!-- Today's Tickets -->
     <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <div class="metric-card card-primary">
-            <div class="metric-icon">
-                <i class="fas fa-ticket-alt"></i>
-            </div>
-            <div class="metric-content">
-                <h3 class="metric-number">{{ today_tickets }}</h3>
-                <p class="metric-label">Today's Tickets</p>
-                <div class="metric-indicator 
-                    {% if today_tickets <= 5 %}indicator-green
-                    {% elif today_tickets <= 10 %}indicator-yellow
-                    {% else %}indicator-red{% endif %}">
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="metric-card card-primary">
+                <div class="metric-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 class="metric-number">{{ today_tickets }}</h3>
+                    <p class="metric-label">Today's Tickets</p>
+                    <div class="metric-indicator 
+                        {% if today_tickets <= 5 %}indicator-green
+                        {% elif today_tickets <= 10 %}indicator-yellow
+                        {% else %}indicator-red{% endif %}">
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Pending Tickets -->
     <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <div class="metric-card card-warning">
-            <div class="metric-icon">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <div class="metric-content">
-                <h3 class="metric-number">{{ pending_tickets }}</h3>
-                <p class="metric-label">Pending</p>
-                <div class="metric-indicator 
-                    {% if pending_tickets <= 10 %}indicator-green
-                    {% elif pending_tickets <= 20 %}indicator-yellow
-                    {% else %}indicator-red{% endif %}">
+        <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
+            <div class="metric-card card-warning">
+                <div class="metric-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 class="metric-number">{{ pending_tickets }}</h3>
+                    <p class="metric-label">Pending</p>
+                    <div class="metric-indicator 
+                        {% if pending_tickets <= 10 %}indicator-green
+                        {% elif pending_tickets <= 20 %}indicator-yellow
+                        {% else %}indicator-red{% endif %}">
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Overdue Tickets -->
     <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <div class="metric-card card-danger">
-            <div class="metric-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="metric-content">
-                <h3 class="metric-number">{{ overdue_tickets }}</h3>
-                <p class="metric-label">Overdue</p>
-                <div class="metric-indicator 
-                    {% if overdue_tickets == 0 %}indicator-green
-                    {% elif overdue_tickets <= 3 %}indicator-yellow
-                    {% else %}indicator-red{% endif %}">
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="metric-card card-danger">
+                <div class="metric-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 class="metric-number">{{ overdue_tickets }}</h3>
+                    <p class="metric-label">Overdue</p>
+                    <div class="metric-indicator 
+                        {% if overdue_tickets == 0 %}indicator-green
+                        {% elif overdue_tickets <= 3 %}indicator-yellow
+                        {% else %}indicator-red{% endif %}">
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Average Resolution Time -->
     <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <div class="metric-card card-info">
-            <div class="metric-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="metric-content">
-                <h3 class="metric-number">{{ "%.1f"|format(avg_resolution_hours) }}h</h3>
-                <p class="metric-label">Avg Resolution</p>
-                <div class="metric-indicator 
-                    {% if avg_resolution_hours <= 24 %}indicator-green
-                    {% elif avg_resolution_hours <= 48 %}indicator-yellow
-                    {% else %}indicator-red{% endif %}">
+        <a href="{{ url_for('tickets_list', status='resolved') }}" class="text-decoration-none">
+            <div class="metric-card card-info">
+                <div class="metric-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 class="metric-number">{{ "%.1f"|format(avg_resolution_hours) }}h</h3>
+                    <p class="metric-label">Avg Resolution</p>
+                    <div class="metric-indicator 
+                        {% if avg_resolution_hours <= 24 %}indicator-green
+                        {% elif avg_resolution_hours <= 48 %}indicator-yellow
+                        {% else %}indicator-red{% endif %}">
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Most Active Technician -->
     <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <div class="metric-card card-success">
-            <div class="metric-icon">
-                <i class="fas fa-user-cog"></i>
+        <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+            <div class="metric-card card-success">
+                <div class="metric-icon">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 class="metric-number">{{ most_active.ticket_count if most_active else 0 }}</h3>
+                    <p class="metric-label">{{ most_active.full_name[:10] + '...' if most_active and most_active.full_name|length > 10 else (most_active.full_name if most_active else 'N/A') }}</p>
+                    <div class="metric-indicator indicator-green"></div>
+                </div>
             </div>
-            <div class="metric-content">
-                <h3 class="metric-number">{{ most_active.ticket_count if most_active else 0 }}</h3>
-                <p class="metric-label">{{ most_active.full_name[:10] + '...' if most_active and most_active.full_name|length > 10 else (most_active.full_name if most_active else 'N/A') }}</p>
-                <div class="metric-indicator indicator-green"></div>
-            </div>
-        </div>
+        </a>
     </div>
 
     <!-- Top Recurring Issue -->
     <div class="col-xl-2 col-lg-4 col-md-6 mb-3">
-        <div class="metric-card card-secondary">
-            <div class="metric-icon">
-                <i class="fas fa-repeat"></i>
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="metric-card card-secondary">
+                <div class="metric-icon">
+                    <i class="fas fa-repeat"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 class="metric-number">{{ top_category.count if top_category else 0 }}</h3>
+                    <p class="metric-label">{{ top_category.name[:12] + '...' if top_category and top_category.name|length > 12 else (top_category.name if top_category else 'N/A') }}</p>
+                    <div class="metric-indicator indicator-yellow"></div>
+                </div>
             </div>
-            <div class="metric-content">
-                <h3 class="metric-number">{{ top_category.count if top_category else 0 }}</h3>
-                <p class="metric-label">{{ top_category.name[:12] + '...' if top_category and top_category.name|length > 12 else (top_category.name if top_category else 'N/A') }}</p>
-                <div class="metric-indicator indicator-yellow"></div>
-            </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -329,6 +341,15 @@
 
 .metric-card:hover {
     transform: translateY(-5px);
+}
+
+a .metric-card:hover {
+    box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+}
+
+a:hover .metric-card .metric-content h3,
+a:hover .metric-card .metric-content p {
+    color: inherit;
 }
 
 .metric-card.card-primary { border-left: 4px solid #007bff; }
