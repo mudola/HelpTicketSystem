@@ -316,6 +316,7 @@ def tickets_list():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
     priority_filter = request.args.get('priority', '')
+    overdue_filter = request.args.get('overdue', '')
 
     query = Ticket.query
 
@@ -336,12 +337,17 @@ def tickets_list():
         query = query.filter_by(status=status_filter)
     if priority_filter:
         query = query.filter_by(priority=priority_filter)
+    if overdue_filter == 'true':
+        query = query.filter(
+            Ticket.due_date < datetime.utcnow(),
+            Ticket.status.in_(['open', 'in_progress'])
+        )
 
     tickets = query.order_by(desc(Ticket.created_at)).paginate(
         page=page, per_page=10, error_out=False
     )
 
-    return render_template('tickets_list.html', tickets=tickets, status_filter=status_filter, priority_filter=priority_filter)
+    return render_template('tickets_list.html', tickets=tickets, status_filter=status_filter, priority_filter=priority_filter, overdue_filter=overdue_filter)
 
 @app.route('/ticket/new', methods=['GET', 'POST'])
 @login_required
@@ -631,6 +637,53 @@ def update_ticket(id):
         flash('Ticket updated successfully', 'success')
 
     return redirect(url_for('ticket_detail', id=id))
+
+@app.route('/reports/print')
+@login_required
+def print_reports():
+    """Print-friendly version of reports with current filters"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    # Get the same data as the regular reports page
+    days = request.args.get('days', 30, type=int)
+    start_date = datetime.utcnow() - timedelta(days=days)
+    end_date = datetime.utcnow()
+    
+    # Filter parameters
+    status_filter = request.args.get('status', '')
+    priority_filter = request.args.get('priority', '')
+    
+    # Build ticket query with filters
+    ticket_query = Ticket.query.filter(
+        Ticket.created_at >= start_date,
+        Ticket.created_at <= end_date
+    )
+    
+    if status_filter:
+        ticket_query = ticket_query.filter(Ticket.status == status_filter)
+    if priority_filter:
+        ticket_query = ticket_query.filter(Ticket.priority == priority_filter)
+    
+    tickets = ticket_query.all()
+    
+    # Calculate statistics
+    total_tickets = len(tickets)
+    open_tickets = len([t for t in tickets if t.status == 'open'])
+    in_progress_tickets = len([t for t in tickets if t.status == 'in_progress'])
+    resolved_tickets = len([t for t in tickets if t.status == 'resolved'])
+    closed_tickets = len([t for t in tickets if t.status == 'closed'])
+    
+    return render_template('reports_print.html',
+                         total_tickets=total_tickets,
+                         open_tickets=open_tickets,
+                         in_progress_tickets=in_progress_tickets, 
+                         resolved_tickets=resolved_tickets,
+                         closed_tickets=closed_tickets,
+                         tickets=tickets[:50],  # Limit for printing
+                         start_date=start_date.strftime('%Y-%m-%d'),
+                         end_date=end_date.strftime('%Y-%m-%d'),
+                         generated_date=datetime.utcnow())
 
 @app.route('/ticket/<int:id>/print')
 @login_required
@@ -1196,6 +1249,36 @@ def api_ticket_descriptions():
     # Remove duplicates and short entries
     unique_desc = list({d[0].strip() for d in descriptions if d[0] and len(d[0].strip()) > 10})
     return jsonify(unique_desc)
+
+@app.route('/api/ticket_counts')
+@login_required
+def api_ticket_counts():
+    """API endpoint to get current ticket counts for real-time updates"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Get current ticket counts
+    total_tickets = Ticket.query.count()
+    open_tickets = Ticket.query.filter_by(status='open').count()
+    in_progress_tickets = Ticket.query.filter_by(status='in_progress').count()
+    resolved_tickets = Ticket.query.filter_by(status='resolved').count()
+    closed_tickets = Ticket.query.filter_by(status='closed').count()
+    
+    # Calculate overdue tickets
+    overdue_tickets = Ticket.query.filter(
+        Ticket.due_date < datetime.utcnow(),
+        Ticket.status.in_(['open', 'in_progress'])
+    ).count()
+    
+    return jsonify({
+        'total_tickets': total_tickets,
+        'open_tickets': open_tickets,
+        'in_progress_tickets': in_progress_tickets,
+        'resolved_tickets': resolved_tickets,
+        'closed_tickets': closed_tickets,
+        'overdue_tickets': overdue_tickets,
+        'last_updated': datetime.utcnow().isoformat()
+    })
 
 @app.route('/api/notifications')
 @login_required

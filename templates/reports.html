@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Reports - ICT Helpdesk{% endblock %}
@@ -120,58 +119,70 @@
 <!-- Key Metrics Cards -->
 <div class="row mb-4">
     <div class="col-md-2">
-        <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-ticket-alt fa-2x mb-2"></i>
-                <h4>{{ total_tickets }}</h4>
-                <p class="mb-0">Total Tickets</p>
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="card text-white bg-primary clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-2x mb-2"></i>
+                    <h4 id="total-tickets">{{ total_tickets }}</h4>
+                    <p class="mb-0">Total Tickets</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card bg-warning text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-folder-open fa-2x mb-2"></i>
-                <h4>{{ open_tickets }}</h4>
-                <p class="mb-0">Open</p>
+        <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
+            <div class="card text-white bg-warning clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-folder-open fa-2x mb-2"></i>
+                    <h4 id="open-tickets">{{ open_tickets }}</h4>
+                    <p class="mb-0">Open</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card bg-info text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-cog fa-2x mb-2"></i>
-                <h4>{{ in_progress_tickets }}</h4>
-                <p class="mb-0">In Progress</p>
+        <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+            <div class="card text-white bg-info clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-cog fa-2x mb-2"></i>
+                    <h4 id="progress-tickets">{{ in_progress_tickets }}</h4>
+                    <p class="mb-0">In Progress</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card bg-success text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-check fa-2x mb-2"></i>
-                <h4>{{ resolved_tickets }}</h4>
-                <p class="mb-0">Resolved</p>
+        <a href="{{ url_for('tickets_list', status='resolved') }}" class="text-decoration-none">
+            <div class="card text-white bg-success clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-check fa-2x mb-2"></i>
+                    <h4 id="resolved-tickets">{{ resolved_tickets }}</h4>
+                    <p class="mb-0">Resolved</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card bg-secondary text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-lock fa-2x mb-2"></i>
-                <h4>{{ closed_tickets }}</h4>
-                <p class="mb-0">Closed</p>
+        <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
+            <div class="card text-white bg-secondary clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-lock fa-2x mb-2"></i>
+                    <h4 id="closed-tickets">{{ closed_tickets }}</h4>
+                    <p class="mb-0">Closed</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-2">
-        <div class="card bg-danger text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                <h4>{{ overdue_tickets|length }}</h4>
-                <p class="mb-0">Overdue</p>
+        <a href="{{ url_for('tickets_list') }}?overdue=true" class="text-decoration-none">
+            <div class="card text-white bg-danger clickable-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h4 id="overdue-tickets">{{ overdue_tickets|length }}</h4>
+                    <p class="mb-0">Overdue</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -207,7 +218,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Priority Distribution -->
     <div class="col-md-4">
         <div class="card">
@@ -219,7 +230,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Trend Chart -->
     <div class="col-md-4">
         <div class="card">
@@ -265,7 +276,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Department Report -->
     <div class="col-md-6">
         <div class="card">
@@ -414,6 +425,14 @@
     .card { border: 1px solid #000 !important; margin-bottom: 20px; }
     body { font-size: 12px; }
 }
+
+.clickable-card {
+    transition: transform 0.3s ease-in-out;
+}
+
+.clickable-card:hover {
+    transform: scale(1.05);
+}
 </style>
 
 <script>
@@ -492,7 +511,7 @@ function exportToCSV() {
         ]{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
-    
+
     const csv = data.map(row => row.map(field => `"${field}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -539,7 +558,7 @@ function updateSubunitOptions() {
     const department = departmentFilter.value;
     subunitFilter.innerHTML = '<option value="">Select Subunit</option>';
     locationFilter.innerHTML = '<option value="">Select Location</option>';
-    
+
     if (department === 'SWA') {
         subunitFilterGroup.style.display = '';
         Object.keys(locationData['SWA']).forEach(subunit => {
@@ -569,7 +588,7 @@ function updateLocationOptions() {
     const department = departmentFilter.value;
     const subunit = subunitFilter.value;
     locationFilter.innerHTML = '<option value="">Select Location</option>';
-    
+
     if (department === 'SWA' && subunit) {
         locationFilterGroup.style.display = '';
         let locations = locationData['SWA'][subunit] || [];
@@ -589,5 +608,111 @@ subunitFilter.addEventListener('change', updateLocationOptions);
 
 // Initialize on page load
 updateSubunitOptions();
+</script>
+{% endblock %}
+
+<!-- Auto-refresh indicator -->
+<div id="refresh-indicator" class="auto-refresh-indicator">
+    <i class="fas fa-sync-alt me-2"></i>Updating data...
+</div>
+
+{% block extra_js %}
+<!-- Chart.js Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Real-time data update functionality
+let updateInterval;
+
+function updateTicketCounts() {
+    const indicator = document.getElementById('refresh-indicator');
+    indicator.classList.add('show');
+
+    fetch('/api/ticket_counts')
+        .then(response => response.json())
+        .then(data => {
+            // Update card counts dynamically
+            document.getElementById('total-tickets').textContent = data.total_tickets;
+            document.getElementById('open-tickets').textContent = data.open_tickets;
+            document.getElementById('progress-tickets').textContent = data.in_progress_tickets;
+            document.getElementById('resolved-tickets').textContent = data.resolved_tickets;
+            document.getElementById('closed-tickets').textContent = data.closed_tickets;
+            document.getElementById('overdue-tickets').textContent = data.overdue_tickets;
+
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 1500);
+        })
+        .catch(error => {
+            console.error('Error updating ticket counts:', error);
+            indicator.classList.remove('show');
+        });
+}
+
+// Start auto-refresh every 30 seconds
+function startAutoRefresh() {
+    updateInterval = setInterval(updateTicketCounts, 30000);
+}
+
+// Stop auto-refresh
+function stopAutoRefresh() {
+    if (updateInterval) {
+        clearInterval(updateInterval);
+    }
+}
+
+// Print functionality
+function printReports() {
+    // Add print-specific content
+    const printContent = `
+        <div class="print-section">
+            <h1>ICT Helpdesk - System Reports</h1>
+            <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+            <hr>
+        </div>
+    `;
+
+    // Insert print content at the beginning of the body
+    document.body.insertAdjacentHTML('afterbegin', printContent);
+
+    // Print the page
+    window.print();
+
+    // Remove print content after printing
+    setTimeout(() => {
+        const printSections = document.querySelectorAll('.print-section');
+        printSections.forEach(section => section.remove());
+    }, 1000);
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Start auto-refresh
+    startAutoRefresh();
+
+    // Stop auto-refresh when user is idle
+    let idleTimer;
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(stopAutoRefresh, 300000); // Stop after 5 minutes of inactivity
+    }
+
+    document.addEventListener('mousemove', resetIdleTimer);
+    document.addEventListener('keypress', resetIdleTimer);
+    resetIdleTimer();
+
+    // Resume auto-refresh when user becomes active again
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            stopAutoRefresh();
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+
+    // Initial update
+    updateTicketCounts();
+});
 </script>
 {% endblock %}
