@@ -31,7 +31,7 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         remember_me = request.form.get('remember_me') == 'y'
-        
+
         if username and password:
             # Admin login: only allow username '215030' and password 'admin123'
             if username == '215030':
@@ -48,7 +48,7 @@ def login():
                 else:
                     flash('Invalid admin password.', 'danger')
                 return redirect(url_for('index'))
-            
+
             # Intern default login
             if username == 'dctraining' and password == 'Dctraining2023':
                 user = User.query.filter_by(username='dctraining').first()
@@ -61,7 +61,7 @@ def login():
                 else:
                     flash('Intern user not found in database.', 'danger')
                 return redirect(url_for('index'))
-            
+
             # Payroll login for users/interns
             user = User.query.filter_by(username=username).first()
             if user and check_password_hash(user.password_hash, password):
@@ -70,7 +70,7 @@ def login():
                 if not next_page or not next_page.startswith('/'):
                     next_page = url_for('dashboard')
                 return redirect(next_page)
-            
+
             flash('Invalid username or password', 'danger')
             return redirect(url_for('index'))
 
@@ -378,27 +378,27 @@ def update_ticket(id):
         old_status = ticket.status
         old_priority = ticket.priority
         old_assignees = set([u.id for u in ticket.assignees])
-        
+
         # Prevent interns from closing tickets
         if current_user.role == 'intern' and form.status.data == 'closed':
             flash('Interns cannot close tickets. Only admins and ticket creators can close tickets.', 'danger')
             return redirect(url_for('ticket_detail', id=id))
-        
+
         # Prevent interns from reverting resolved tickets
         if current_user.role == 'intern' and old_status == 'resolved' and form.status.data != 'resolved':
             flash('Interns cannot revert resolved tickets. Only administrators can modify resolved tickets.', 'danger')
             return redirect(url_for('ticket_detail', id=id))
-        
+
         # Prevent reverting closed tickets
         if old_status == 'closed' and form.status.data != 'closed':
             flash('Cannot revert a closed ticket. Closed tickets cannot be reopened.', 'danger')
             return redirect(url_for('ticket_detail', id=id))
-        
+
         # Prevent closing tickets that are not resolved
         if form.status.data == 'closed' and old_status != 'resolved':
             flash('Tickets can only be closed if they are resolved first.', 'danger')
             return redirect(url_for('ticket_detail', id=id))
-        
+
         ticket.status = form.status.data
         ticket.priority = form.priority.data
         ticket.updated_at = datetime.utcnow()
@@ -536,7 +536,7 @@ def close_ticket(id):
     ticket.closed_by_id = current_user.id
     ticket.updated_at = datetime.utcnow()
     # Preserve assignees when closing - do not modify assignment
-    
+
     # Log the closure
     from models import TicketHistory
     history = TicketHistory(
@@ -558,12 +558,12 @@ def close_ticket(id):
 def reports_pdf():
     if current_user.role != 'admin':
         abort(403)
-    
+
     # Use same logic as main reports route for consistency
     days = request.args.get('days', 30, type=int)
     start_date = datetime.utcnow() - timedelta(days=days)
     end_date = datetime.utcnow()
-    
+
     # Custom date range
     custom_start = request.args.get('start_date')
     custom_end = request.args.get('end_date')
@@ -573,19 +573,19 @@ def reports_pdf():
             end_date = datetime.strptime(custom_end, '%Y-%m-%d')
         except ValueError:
             pass
-    
+
     # Filter parameters
     status_filter = request.args.get('status', '')
     priority_filter = request.args.get('priority', '')
     category_filter = request.args.get('category', type=int)
     department_filter = request.args.get('department', '')
-    
+
     # Build ticket query with filters
     ticket_query = Ticket.query.filter(
         Ticket.created_at >= start_date,
         Ticket.created_at <= end_date
     )
-    
+
     if status_filter:
         ticket_query = ticket_query.filter(Ticket.status == status_filter)
     if priority_filter:
@@ -594,13 +594,13 @@ def reports_pdf():
         ticket_query = ticket_query.filter(Ticket.category_id == category_filter)
     if department_filter:
         ticket_query = ticket_query.filter(Ticket.location.contains(department_filter))
-    
+
     tickets = ticket_query.all()
-    
+
     # Calculate statistics
     total_tickets = len(tickets)
     closed_tickets = len([t for t in tickets if t.status == 'closed'])
-    
+
     # Staff performance
     staff_performance = db.session.query(
         User.full_name,
@@ -612,36 +612,36 @@ def reports_pdf():
          Ticket.created_at <= end_date,
          User.role.in_(['admin', 'intern'])
      ).group_by(User.id, User.full_name, User.role).all()
-    
+
     # Category stats
     category_stats = db.session.query(
         Category.name,
         func.count(Ticket.id).label('count')
     ).join(Ticket, Category.id == Ticket.category_id)\
      .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
-    
+
     if category_filter:
         category_stats = category_stats.filter(Category.id == category_filter)
-        
+
     category_stats = category_stats.group_by(Category.name).all()
-    
+
     # Priority and status stats
     priority_stats = {}
     status_stats = {}
     for t in tickets:
         priority_stats[t.priority] = priority_stats.get(t.priority, 0) + 1
         status_stats[t.status] = status_stats.get(t.status, 0) + 1
-    
+
     priority_stats = [{'priority': k, 'count': v} for k, v in priority_stats.items()]
     status_stats = [{'status': k, 'count': v} for k, v in status_stats.items()]
-    
+
     # Average resolution time
     resolved_tickets = [t for t in tickets if t.status in ['resolved', 'closed'] and t.closed_at]
     avg_resolution_time = None
     if resolved_tickets:
         total_time = sum([(t.closed_at - t.created_at).total_seconds() for t in resolved_tickets])
         avg_resolution_time = total_time / len(resolved_tickets) / 3600  # in hours
-    
+
     return render_template('reports_pdf.html',
                          total_tickets=total_tickets,
                          closed_tickets=closed_tickets,
@@ -666,7 +666,7 @@ def reports():
     days = request.args.get('days', 30, type=int)
     start_date = datetime.utcnow() - timedelta(days=days)
     end_date = datetime.utcnow()
-    
+
     # Custom date range
     custom_start = request.args.get('start_date')
     custom_end = request.args.get('end_date')
@@ -685,18 +685,34 @@ def reports():
     priority_filter = request.args.get('priority', '')
     category_filter = request.args.get('category', type=int)
     department_filter = request.args.get('department', '')
+    location_filter = request.args.get('location', '')
+    subunit_filter = request.args.get('subunit', '')
 
     # All reference data for dropdowns
     all_users = User.query.order_by(User.full_name).all()
     all_categories = Category.query.order_by(Category.name).all()
-    departments = ['SWA', 'UHS', 'Confucius', 'Chiromo', 'Halls', 'USHR', 'LSHR', 'Staff clinic', 'Student clinic', 'Block A', 'Block B', 'Block C']
+    departments = ['SWA', 'UHS', 'Confucius']
+    subunits = {
+        'SWA': ['LSHR', 'USHR'],
+        'UHS': ['Staff clinic', 'Student clinic'],
+        'Confucius': ['Block A', 'Block B', 'Block C']
+    }
+    locations = {
+        'LSHR': ['Location 1', 'Location 2'],
+        'USHR': ['Location 3', 'Location 4'],
+        'Staff clinic': ['Location 5', 'Location 6'],
+        'Student clinic': ['Location 7', 'Location 8'],
+        'Block A': ['Location 9', 'Location 10'],
+        'Block B': ['Location 11', 'Location 12'],
+        'Block C': ['Location 13', 'Location 14']
+    }
 
     # Build ticket query with enhanced filters
     ticket_query = Ticket.query.filter(
         Ticket.created_at >= start_date,
         Ticket.created_at <= end_date
     )
-    
+
     if created_by:
         ticket_query = ticket_query.filter(Ticket.created_by_id == created_by)
     if attended_by:
@@ -707,9 +723,13 @@ def reports():
         ticket_query = ticket_query.filter(Ticket.priority == priority_filter)
     if category_filter:
         ticket_query = ticket_query.filter(Ticket.category_id == category_filter)
-    if department_filter:
+    if location_filter:
+        ticket_query = ticket_query.filter(Ticket.location.contains(location_filter))
+    elif subunit_filter:
+        ticket_query = ticket_query.filter(Ticket.location.contains(subunit_filter))
+    elif department_filter:
         ticket_query = ticket_query.filter(Ticket.location.contains(department_filter))
-    
+
     tickets = ticket_query.all()
 
     # Enhanced statistics
@@ -725,12 +745,12 @@ def reports():
         func.count(Ticket.id).label('count')
     ).join(Ticket, Category.id == Ticket.category_id)\
      .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
-    
+
     if category_filter:
         category_stats = category_stats.filter(Category.id == category_filter)
     if department_filter:
         category_stats = category_stats.filter(Ticket.location.contains(department_filter))
-        
+
     category_stats = category_stats.group_by(Category.name).all()
 
     # Tickets by department/location
@@ -738,7 +758,7 @@ def reports():
     for ticket in tickets:
         dept = 'Other'
         # Check for more specific subunits first, then general departments
-        for d in ['USHR', 'LSHR', 'Staff clinic', 'Student clinic', 'Block A', 'Block B', 'Block C', 'SWA', 'UHS', 'Confucius', 'Chiromo', 'Halls']:
+        for d in ['USHR', 'LSHR', 'Staff clinic', 'Student clinic', 'Block A', 'Block B', 'Block C', 'SWA', 'UHS', 'Confucius']:
             if d.lower() in ticket.location.lower():
                 dept = d
                 break
@@ -760,17 +780,17 @@ def reports():
          Ticket.status.in_(['resolved', 'closed']),
          User.role.in_(['admin', 'intern'])
      )
-    
+
     if attended_by:
         staff_performance = staff_performance.filter(User.id == attended_by)
-        
+
     staff_performance = staff_performance.group_by(User.id, User.full_name, User.role).all()
 
     # Response and resolution times
     tickets_with_times = [t for t in tickets if t.status in ['resolved', 'closed'] and t.closed_at]
     avg_resolution_time = None
     resolution_times = []
-    
+
     if tickets_with_times:
         total_time = sum([(t.closed_at - t.created_at).total_seconds() for t in tickets_with_times])
         avg_resolution_time = total_time / len(tickets_with_times) / 3600  # in hours
@@ -843,7 +863,9 @@ def reports():
                          status_filter=status_filter,
                          priority_filter=priority_filter,
                          category_filter=category_filter or '',
-                         department_filter=department_filter)
+                         department_filter=department_filter,
+                         location_filter=location_filter,
+                         subunit_filter=subunit_filter)
 
 @app.route('/admin/users')
 @login_required
@@ -936,35 +958,35 @@ def create_user():
 def delete_user(user_id):
     if current_user.role != 'admin':
         abort(403)
-    
+
     user = User.query.get_or_404(user_id)
-    
+
     # Prevent admin from deleting themselves
     if user.id == current_user.id:
         flash('You cannot delete your own account', 'danger')
         return redirect(url_for('user_management'))
-    
+
     # Update tickets created by this user to show deleted user
     tickets_created = Ticket.query.filter_by(created_by_id=user_id).all()
     for ticket in tickets_created:
         ticket.created_by_id = None
-    
+
     # Remove user from assignees for all tickets
     tickets_assigned = Ticket.query.join(Ticket.assignees).filter(User.id == user_id).all()
     for ticket in tickets_assigned:
         ticket.assignees = [u for u in ticket.assignees if u.id != user_id]
         if ticket.status == 'in_progress' and not ticket.assignees:
             ticket.status = 'open'
-    
+
     # Update comments by this user
     comments = Comment.query.filter_by(author_id=user_id).all()
     for comment in comments:
         comment.author_id = None
-    
+
     # Delete the user
     db.session.delete(user)
     db.session.commit()
-    
+
     flash(f'User {user.full_name} deleted successfully', 'success')
     return redirect(url_for('user_management'))
 
@@ -988,25 +1010,25 @@ def uploaded_file(filename):
 def delete_ticket(ticket_id):
     if current_user.role != 'admin':
         abort(403)
-    
+
     ticket = Ticket.query.get_or_404(ticket_id)
-    
+
     # Delete associated records in the correct order
     # Delete ticket history first
     from models import TicketHistory
     TicketHistory.query.filter_by(ticket_id=ticket_id).delete()
-    
+
     # Delete comments and attachments
     Comment.query.filter_by(ticket_id=ticket_id).delete()
     Attachment.query.filter_by(ticket_id=ticket_id).delete()
-    
+
     # Clear assignees (many-to-many relationship)
     ticket.assignees.clear()
-    
+
     # Delete the ticket
     db.session.delete(ticket)
     db.session.commit()
-    
+
     flash('Ticket deleted successfully', 'success')
     return redirect(url_for('tickets_list'))
 
@@ -1038,12 +1060,12 @@ def api_notifications():
     # Only for IT staff (interns, admins)
     if current_user.role not in ['admin', 'intern']:
         return jsonify([])
-    
+
     from datetime import datetime, timedelta
-    
+
     # Get tickets created in the last 24 hours or recently updated
     recent_cutoff = datetime.utcnow() - timedelta(hours=24)
-    
+
     query = Ticket.query
     if current_user.role == 'intern':
         # For interns: show tickets assigned to them or newly created tickets
@@ -1054,15 +1076,15 @@ def api_notifications():
             )
         )
     # Admin can see all tickets
-    
+
     recent_tickets = query.order_by(Ticket.created_at.desc()).limit(15).all()
     notifications = []
-    
+
     for t in recent_tickets:
         # Determine notification type
         is_new = (datetime.utcnow() - t.created_at).total_seconds() < 3600  # Less than 1 hour old
         notification_type = 'new' if is_new else 'updated'
-        
+
         notifications.append({
             'id': t.id,
             'type': notification_type,
@@ -1083,17 +1105,17 @@ def api_notifications():
 def analytics_dashboard():
     if current_user.role != 'admin':
         abort(403)
-    
+
     # Quick stats for last 30 days
     start_date = datetime.utcnow() - timedelta(days=30)
-    
+
     # Key performance indicators
     total_tickets = Ticket.query.filter(Ticket.created_at >= start_date).count()
     resolved_this_month = Ticket.query.filter(
         Ticket.created_at >= start_date,
         Ticket.status.in_(['resolved', 'closed'])
     ).count()
-    
+
     # SLA compliance (assuming 2-day target)
     sla_compliant = 0
     sla_total = 0
@@ -1106,9 +1128,9 @@ def analytics_dashboard():
         resolution_time = (ticket.closed_at - ticket.created_at).total_seconds() / 3600
         if resolution_time <= 48:  # 48 hours = 2 days
             sla_compliant += 1
-    
+
     sla_percentage = (sla_compliant / sla_total * 100) if sla_total > 0 else 0
-    
+
     # Top categories
     top_categories = db.session.query(
         Category.name,
@@ -1118,7 +1140,7 @@ def analytics_dashboard():
      .group_by(Category.name)\
      .order_by(func.count(Ticket.id).desc())\
      .limit(5).all()
-    
+
     return render_template('analytics_dashboard.html',
                          total_tickets=total_tickets,
                          resolved_this_month=resolved_this_month,

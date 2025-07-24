@@ -73,11 +73,25 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Department</label>
-                <select name="department" class="form-select">
+                <select name="department" id="department_filter" class="form-select">
                     <option value="">All Departments</option>
-                    {% for dept in departments %}
-                        <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>{{ dept }}</option>
-                    {% endfor %}
+                    <option value="SWA" {% if department_filter == 'SWA' %}selected{% endif %}>SWA</option>
+                    <option value="UHS" {% if department_filter == 'UHS' %}selected{% endif %}>UHS</option>
+                    <option value="Confucius" {% if department_filter == 'Confucius' %}selected{% endif %}>Confucius</option>
+                    <option value="Chiromo" {% if department_filter == 'Chiromo' %}selected{% endif %}>Chiromo</option>
+                    <option value="Halls" {% if department_filter == 'Halls' %}selected{% endif %}>Halls</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="subunit-filter-group" style="display:none;">
+                <label class="form-label">Subunit</label>
+                <select name="subunit" id="subunit_filter" class="form-select">
+                    <option value="">Select Subunit</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="location-filter-group" style="display:none;">
+                <label class="form-label">Location</label>
+                <select name="location" id="location_filter" class="form-select">
+                    <option value="">Select Location</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -488,5 +502,92 @@ function exportToCSV() {
     a.click();
     window.URL.revokeObjectURL(url);
 }
+
+// Cascading dropdown functionality
+const departmentFilter = document.getElementById('department_filter');
+const subunitFilterGroup = document.getElementById('subunit-filter-group');
+const subunitFilter = document.getElementById('subunit_filter');
+const locationFilterGroup = document.getElementById('location-filter-group');
+const locationFilter = document.getElementById('location_filter');
+
+const locationData = {
+    'SWA': {
+        'USHR': [
+            'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8', 'Hall 9', 'Swa Headquater', 
+            'Mamlaka Unit', 'Procurement', 'Finance Halls', 'Accounts Catering', 'Hall 12', 
+            'Hall 13', 'Stella Awinja', 'Womens Hall (Hall 20)', 'Security'
+        ],
+        'LSHR': [
+            'SMU', 'Hall 1', 'Hall 2', 'Hall 3', 'Hall 10', 'Hall 11', 'Hall 15', 
+            'Sports department', 'Kitchen 1', 'Internal Audit', 'CCU'
+        ]
+    },
+    'UHS': {
+        '': [
+            'Staff clinic', 'Student clinic', 'CMO', 'Laboratory', 'SickBay', 
+            'ICEC', 'Gender Desk', 'Theatre', 'Accounts'
+        ]
+    },
+    'Confucius': {
+        '': [
+            'Block A', 'Block B', 'Block C'
+        ]
+    }
+};
+
+function updateSubunitOptions() {
+    const department = departmentFilter.value;
+    subunitFilter.innerHTML = '<option value="">Select Subunit</option>';
+    locationFilter.innerHTML = '<option value="">Select Location</option>';
+    
+    if (department === 'SWA') {
+        subunitFilterGroup.style.display = '';
+        Object.keys(locationData['SWA']).forEach(subunit => {
+            const opt = document.createElement('option');
+            opt.value = subunit;
+            opt.text = subunit;
+            subunitFilter.appendChild(opt);
+        });
+        locationFilterGroup.style.display = 'none';
+    } else if (department === 'UHS' || department === 'Confucius') {
+        subunitFilterGroup.style.display = 'none';
+        locationFilterGroup.style.display = '';
+        let locations = locationData[department][''];
+        locations.forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc;
+            opt.text = loc;
+            locationFilter.appendChild(opt);
+        });
+    } else {
+        subunitFilterGroup.style.display = 'none';
+        locationFilterGroup.style.display = 'none';
+    }
+}
+
+function updateLocationOptions() {
+    const department = departmentFilter.value;
+    const subunit = subunitFilter.value;
+    locationFilter.innerHTML = '<option value="">Select Location</option>';
+    
+    if (department === 'SWA' && subunit) {
+        locationFilterGroup.style.display = '';
+        let locations = locationData['SWA'][subunit] || [];
+        locations.forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc;
+            opt.text = loc;
+            locationFilter.appendChild(opt);
+        });
+    } else {
+        locationFilterGroup.style.display = 'none';
+    }
+}
+
+departmentFilter.addEventListener('change', updateSubunitOptions);
+subunitFilter.addEventListener('change', updateLocationOptions);
+
+// Initialize on page load
+updateSubunitOptions();
 </script>
 {% endblock %}
