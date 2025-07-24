@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 
 from app import app, db, mail
 from models import User, Ticket, Comment, Attachment, Category, Notification, NotificationSettings
-from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm, AdminUserForm, NotificationSettingsForm
+from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm, AdminUserForm, NotificationSettingsForm, PasswordChangeForm, UserStatusForm
 from utils import send_notification_email, get_dashboard_stats
 from notification_utils import NotificationManager
 
@@ -66,6 +66,9 @@ def login():
             # Payroll login for users/interns
             user = User.query.filter_by(username=username).first()
             if user and check_password_hash(user.password_hash, password):
+                if not user.is_active:
+                    flash('Your account has been deactivated. Please contact administrator.', 'danger')
+                    return redirect(url_for('index'))
                 login_user(user, remember=remember_me)
                 next_page = request.args.get('next')
                 if not next_page or not next_page.startswith('/'):
@@ -882,10 +885,12 @@ def user_management():
     form = UserManagementForm()
     admin_user_form = AdminUserForm()
     category_form = CategoryForm()
+    status_form = UserStatusForm()
     categories = Category.query.all()
 
     return render_template('user_management.html', users=users, form=form, 
-                         admin_user_form=admin_user_form, category_form=category_form, categories=categories)
+                         admin_user_form=admin_user_form, category_form=category_form, 
+                         status_form=status_form, categories=categories)
 
 @app.route('/admin/users/update_password', methods=['POST'])
 @login_required
@@ -1190,3 +1195,54 @@ def notification_settings():
         return redirect(url_for('notification_settings'))
     
     return render_template('notification_settings.html', settings=settings, form=form)
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """Allow users to change their own password"""
+    form = PasswordChangeForm()
+    
+    if form.validate_on_submit():
+        # Verify current password
+        if not check_password_hash(current_user.password_hash, form.current_password.data):
+            flash('Current password is incorrect', 'danger')
+            return render_template('change_password.html', form=form)
+        
+        # Update password
+        current_user.password_hash = generate_password_hash(form.new_password.data)
+        db.session.commit()
+        
+        flash('Password changed successfully', 'success')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('change_password.html', form=form)
+
+@app.route('/admin/users/<int:user_id>/toggle_status', methods=['POST'])
+@login_required
+def toggle_user_status(user_id):
+    """Admin route to activate/deactivate user accounts"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent admin from deactivating themselves
+    if user.id == current_user.id:
+        flash('You cannot deactivate your own account', 'danger')
+        return redirect(url_for('user_management'))
+    
+    # Toggle status
+    user.is_active = not user.is_active
+    status_text = 'activated' if user.is_active else 'deactivated'
+    
+    # If deactivating, remove from all assigned tickets
+    if not user.is_active:
+        tickets_assigned = Ticket.query.join(Ticket.assignees).filter(User.id == user_id).all()
+        for ticket in tickets_assigned:
+            ticket.assignees = [u for u in ticket.assignees if u.id != user_id]
+            if ticket.status == 'in_progress' and not ticket.assignees:
+                ticket.status = 'open'
+    
+    db.session.commit()
+    flash(f'User {user.full_name} has been {status_text}', 'success')
+    return redirect(url_for('user_management'))

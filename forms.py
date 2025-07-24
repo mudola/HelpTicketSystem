@@ -114,6 +114,12 @@ class CategoryForm(FlaskForm):
     description = StringField('Description', validators=[Length(max=200)])
     submit = SubmitField('Add Category')
 
+class PasswordChangeForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
+    submit = SubmitField('Change Password')
+
 class AdminUserForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -121,6 +127,11 @@ class AdminUserForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     role = SelectField('Role', choices=[('user', 'User'), ('intern', 'Intern'), ('admin', 'Admin')], default='user')
     submit = SubmitField('Create User')
+
+class UserStatusForm(FlaskForm):
+    user_id = IntegerField('User ID', validators=[DataRequired()])
+    is_active = BooleanField('Active Status')
+    submit = SubmitField('Update Status')
 
 class NotificationSettingsForm(FlaskForm):
     new_ticket_email = BooleanField('New ticket email notifications')

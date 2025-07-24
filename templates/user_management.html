@@ -14,8 +14,12 @@
     <!-- Users List -->
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">System Users</h5>
+                <div>
+                    <span class="badge bg-success me-2">Active: {{ users|selectattr('is_active')|list|length }}</span>
+                    <span class="badge bg-secondary">Inactive: {{ users|rejectattr('is_active')|list|length }}</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -51,18 +55,28 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-outline-warning" 
-                                            onclick="showPasswordModal({{ user.id }}, '{{ user.full_name }}')">
-                                        <i class="fas fa-key"></i>
-                                    </button>
-                                    {% if user.id != current_user.id %}
-                                    <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display: inline;" 
-                                          onsubmit="return confirm('Are you sure you want to delete {{ user.full_name }}? This action cannot be undone.')">
-                                        <button type="submit" class="btn btn-danger btn-sm">
-                                            <i class="fas fa-trash"></i>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                onclick="showPasswordModal({{ user.id }}, '{{ user.full_name }}')" 
+                                                title="Change Password">
+                                            <i class="fas fa-key"></i>
                                         </button>
-                                    </form>
-                                    {% endif %}
+                                        {% if user.id != current_user.id %}
+                                        <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.id) }}" style="display: inline;" 
+                                              onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if user.is_active else 'activate' }} {{ user.full_name }}?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}" 
+                                                    title="{{ 'Deactivate' if user.is_active else 'Activate' }} User">
+                                                <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display: inline;" 
+                                              onsubmit="return confirm('Are you sure you want to delete {{ user.full_name }}? This action cannot be undone.')">
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Delete User">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
