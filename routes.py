@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 
 from app import app, db, mail
 from models import User, Ticket, Comment, Attachment, Category, Notification, NotificationSettings
-from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm, AdminUserForm
+from forms import LoginForm, RegistrationForm, TicketForm, CommentForm, TicketUpdateForm, UserManagementForm, CategoryForm, AdminUserForm, NotificationSettingsForm
 from utils import send_notification_email, get_dashboard_stats
 from notification_utils import NotificationManager
 
@@ -1157,30 +1157,26 @@ def notification_settings():
         db.session.add(settings)
         db.session.commit()
     
-    if request.method == 'POST':
+    form = NotificationSettingsForm(obj=settings)
+    
+    if form.validate_on_submit():
         # Update settings from form
-        settings.new_ticket_email = request.form.get('new_ticket_email') == 'on'
-        settings.new_ticket_app = request.form.get('new_ticket_app') == 'on'
-        settings.ticket_updated_email = request.form.get('ticket_updated_email') == 'on'
-        settings.ticket_updated_app = request.form.get('ticket_updated_app') == 'on'
-        settings.new_comment_email = request.form.get('new_comment_email') == 'on'
-        settings.new_comment_app = request.form.get('new_comment_app') == 'on'
-        settings.ticket_closed_email = request.form.get('ticket_closed_email') == 'on'
-        settings.ticket_closed_app = request.form.get('ticket_closed_app') == 'on'
-        settings.ticket_overdue_email = request.form.get('ticket_overdue_email') == 'on'
-        settings.ticket_overdue_app = request.form.get('ticket_overdue_app') == 'on'
-        settings.do_not_disturb = request.form.get('do_not_disturb') == 'on'
+        form.populate_obj(settings)
         
-        # Handle time fields
-        dnd_start = request.form.get('dnd_start_time')
-        dnd_end = request.form.get('dnd_end_time')
-        if dnd_start:
-            settings.dnd_start_time = datetime.strptime(dnd_start, '%H:%M').time()
-        if dnd_end:
-            settings.dnd_end_time = datetime.strptime(dnd_end, '%H:%M').time()
+        # Handle time fields specially
+        if form.dnd_start_time.data:
+            try:
+                settings.dnd_start_time = datetime.strptime(form.dnd_start_time.data, '%H:%M').time()
+            except ValueError:
+                pass
+        if form.dnd_end_time.data:
+            try:
+                settings.dnd_end_time = datetime.strptime(form.dnd_end_time.data, '%H:%M').time()
+            except ValueError:
+                pass
         
         db.session.commit()
         flash('Notification settings updated successfully', 'success')
         return redirect(url_for('notification_settings'))
     
-    return render_template('notification_settings.html', settings=settings)
+    return render_template('notification_settings.html', settings=settings, form=form)
