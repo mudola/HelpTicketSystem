@@ -1,441 +1,492 @@
+
 {% extends "base.html" %}
 
 {% block title %}Reports - ICT Helpdesk{% endblock %}
 
-
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <h2><i class="fas fa-chart-bar me-2"></i>Reports</h2>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-        <form method="get" class="d-flex gap-2 align-items-center flex-wrap" id="reportFilterForm">
-            <input type="hidden" name="days" value="{{ days }}">
-            <div>
-                <label for="created_by" class="form-label mb-0 me-1">Created By:</label>
-                <select name="created_by" id="created_by" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 150px;">
-                    <option value="">All</option>
-                    {% for user in all_users %}
-                        <option value="{{ user.id }}" {% if created_by|int == user.id %}selected{% endif %}>{{ user.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label for="attended_by" class="form-label mb-0 me-1">Attended By:</label>
-                <select name="attended_by" id="attended_by" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 150px;">
-                    <option value="">All</option>
-                    {% for user in all_users %}
-                        <option value="{{ user.id }}" {% if attended_by|int == user.id %}selected{% endif %}>{{ user.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </form>
-        <div class="btn-group ms-2">
-            <a href="{{ url_for('reports', days=7, created_by=created_by, attended_by=attended_by) }}" class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}">7 Days</a>
-            <a href="{{ url_for('reports', days=30, created_by=created_by, attended_by=attended_by) }}" class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}">30 Days</a>
-            <a href="{{ url_for('reports', days=90, created_by=created_by, attended_by=attended_by) }}" class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}">90 Days</a>
-        </div>
+    <h2><i class="fas fa-chart-bar me-2"></i>Comprehensive Reports Dashboard</h2>
+    <div class="d-flex gap-2 flex-wrap">
         <button onclick="printReport()" class="btn btn-primary">
             <i class="fas fa-print me-1"></i>Print Report
         </button>
-        <a href="{{ url_for('reports_pdf', days=days) }}" target="_blank" class="btn btn-success">
-            <i class="fas fa-file-pdf me-1"></i>PDF Version
+        <a href="{{ url_for('reports_pdf', days=days, start_date=start_date, end_date=end_date) }}" target="_blank" class="btn btn-success">
+            <i class="fas fa-file-pdf me-1"></i>Export PDF
         </a>
+        <button onclick="exportToCSV()" class="btn btn-info">
+            <i class="fas fa-file-csv me-1"></i>Export CSV
+        </button>
     </div>
 </div>
 
-<!-- Print Header (visible only when printing) -->
-<div class="d-none d-print-block mb-4">
-    <div class="text-center">
-        <h1>ICT Helpdesk System Report</h1>
-        <p><strong>Report Period:</strong> Last {{ days }} days</p>
-        <p><strong>Generated:</strong> {{ datetime.utcnow().strftime('%B %d, %Y at %I:%M %p') }}</p>
-        <hr>
+<!-- Enhanced Filters Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Report Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3" id="reportFilterForm">
+            <div class="col-md-3">
+                <label class="form-label">Date Range</label>
+                <div class="btn-group d-block">
+                    <a href="{{ url_for('reports', days=7) }}" class="btn btn-outline-secondary btn-sm {% if days == 7 %}active{% endif %}">7 Days</a>
+                    <a href="{{ url_for('reports', days=30) }}" class="btn btn-outline-secondary btn-sm {% if days == 30 %}active{% endif %}">30 Days</a>
+                    <a href="{{ url_for('reports', days=90) }}" class="btn btn-outline-secondary btn-sm {% if days == 90 %}active{% endif %}">90 Days</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Custom Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Custom End Date</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+                    <option value="urgent" {% if priority_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in all_categories %}
+                        <option value="{{ category.id }}" {% if category_filter|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Department</label>
+                <select name="department" class="form-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Technician</label>
+                <select name="attended_by" class="form-select">
+                    <option value="">All Technicians</option>
+                    {% for user in all_users %}
+                        {% if user.role in ['admin', 'intern'] %}
+                            <option value="{{ user.id }}" {% if attended_by|int == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search me-1"></i>Apply Filters
+                </button>
+                <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Clear All
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- Summary Cards -->
+<!-- Key Metrics Cards -->
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white">
             <div class="card-body text-center">
                 <i class="fas fa-ticket-alt fa-2x mb-2"></i>
                 <h4>{{ total_tickets }}</h4>
                 <p class="mb-0">Total Tickets</p>
-                <small>Last {{ days }} days</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success">
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-folder-open fa-2x mb-2"></i>
+                <h4>{{ open_tickets }}</h4>
+                <p class="mb-0">Open</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-cog fa-2x mb-2"></i>
+                <h4>{{ in_progress_tickets }}</h4>
+                <p class="mb-0">In Progress</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <i class="fas fa-check fa-2x mb-2"></i>
+                <h4>{{ resolved_tickets }}</h4>
+                <p class="mb-0">Resolved</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-lock fa-2x mb-2"></i>
                 <h4>{{ closed_tickets }}</h4>
-                <p class="mb-0">Closed Tickets</p>
-                <small>{{ "%.1f"|format((closed_tickets / total_tickets * 100) if total_tickets > 0 else 0) }}% completion rate</small>
+                <p class="mb-0">Closed</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info">
+    <div class="col-md-2">
+        <div class="card bg-danger text-white">
             <div class="card-body text-center">
-                <i class="fas fa-clock fa-2x mb-2"></i>
-                <h4>{{ "%.1f"|format(avg_resolution_time) if avg_resolution_time else 'N/A' }}</h4>
-                <p class="mb-0">Avg Resolution Time</p>
-                <small>Hours</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning">
-            <div class="card-body text-center">
-                <i class="fas fa-hourglass-half fa-2x mb-2"></i>
-                <h4>{{ total_tickets - closed_tickets }}</h4>
-                <p class="mb-0">Open/In Progress</p>
-                <small>Pending tickets</small>
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h4>{{ overdue_tickets|length }}</h4>
+                <p class="mb-0">Overdue</p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- Ticket Status Distribution -->
-    <div class="col-md-6 mb-4">
+<!-- Average Resolution Time Card -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h3 class="text-primary">
+                    {% if avg_resolution_time %}
+                        {{ "%.1f"|format(avg_resolution_time) }} hours
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h3>
+                <p class="mb-0"><strong>Average Resolution Time</strong></p>
+                <small class="text-muted">Based on {{ resolved_tickets + closed_tickets }} resolved/closed tickets</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Status Distribution -->
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Tickets by Status</h5>
+                <h6 class="mb-0">Ticket Status Distribution</h6>
             </div>
             <div class="card-body">
-                {% if status_stats %}
-                    <canvas id="statusChart"></canvas>
-                {% else %}
-                    <p class="text-center text-muted">No data available</p>
-                {% endif %}
+                <canvas id="statusChart"></canvas>
             </div>
         </div>
     </div>
     
     <!-- Priority Distribution -->
-    <div class="col-md-6 mb-4">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Tickets by Priority</h5>
+                <h6 class="mb-0">Priority Distribution</h6>
             </div>
             <div class="card-body">
-                {% if priority_stats %}
-                    <canvas id="priorityChart"></canvas>
-                {% else %}
-                    <p class="text-center text-muted">No data available</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- User Activity -->
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">User Activity</h5>
-            </div>
-            <div class="card-body">
-                {% if user_activity %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Role</th>
-                                    <th>Tickets Created</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for activity in user_activity %}
-                                <tr>
-                                    <td>{{ activity.full_name }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'danger' if activity.role == 'admin' else 'warning' if activity.role == 'intern' else 'secondary' }}">
-                                            {{ activity.role.title() }}
-                                        </span>
-                                    </td>
-                                    <td>{{ activity.tickets_created }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-center text-muted">No user activity data</p>
-                {% endif %}
+                <canvas id="priorityChart"></canvas>
             </div>
         </div>
     </div>
     
-    <!-- Intern Performance -->
-    <div class="col-md-6 mb-4">
+    <!-- Trend Chart -->
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Intern Performance</h5>
+                <h6 class="mb-0">7-Day Trend</h6>
             </div>
             <div class="card-body">
-                {% if intern_activity %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Intern</th>
-                                    <th>Tickets Assigned</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for activity in intern_activity %}
-                                <tr>
-                                    <td>{{ activity.full_name }}</td>
-                                    <td>{{ activity.tickets_assigned }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-center text-muted">No intern activity data</p>
-                {% endif %}
+                <canvas id="trendChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Reports Tables -->
 <div class="row mb-4">
-    <div class="col-12">
+    <!-- Category Report -->
+    <div class="col-md-6">
         <div class="card">
-            <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-                <h5 class="mb-0">Detailed Ticket Activity</h5>
-                <div class="form-check form-check-inline ms-2">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-id" checked> ID</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-summary" checked> Summary</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-assignee" checked> Assignee</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-creator" checked> Creator</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-category" checked> Category</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-location" checked> Location</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-status" checked> Status</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-created" checked> Created</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <label class="form-check-label"><input class="form-check-input report-col-toggle" type="checkbox" data-col="col-due" checked> Due Date</label>
-                </div>
+            <div class="card-header">
+                <h6 class="mb-0">Tickets by Category</h6>
             </div>
             <div class="card-body">
-                {% if tickets %}
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover" id="detailedReportTable">
+                    <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th class="col-id">ID</th>
-                                <th class="col-summary">Summary</th>
-                                <th class="col-assignee">Assignee</th>
-                                <th class="col-creator">Creator</th>
-                                <th class="col-category">Category</th>
-                                <th class="col-location">Location</th>
-                                <th class="col-status">Status</th>
-                                <th class="col-created">Created</th>
-                                <th class="col-due">Due Date</th>
+                                <th>Category</th>
+                                <th>Count</th>
+                                <th>%</th>
                             </tr>
                         </thead>
                         <tbody>
-                        {% for ticket in tickets %}
+                            {% for stat in category_stats %}
                             <tr>
-                                <td class="col-id">#{{ ticket.id }}</td>
-                                <td class="col-summary">{{ ticket.description[:60] ~ ('...' if ticket.description|length > 60 else '') }}</td>
-                                <td class="col-assignee">
+                                <td>{{ stat.name }}</td>
+                                <td>{{ stat.count }}</td>
+                                <td>{{ "%.1f"|format((stat.count / total_tickets * 100) if total_tickets > 0 else 0) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department Report -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Tickets by Department</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Count</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in department_stats %}
+                            <tr>
+                                <td>{{ stat.department }}</td>
+                                <td>{{ stat.count }}</td>
+                                <td>{{ "%.1f"|format((stat.count / total_tickets * 100) if total_tickets > 0 else 0) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Performance -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Staff Performance Report</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Staff Member</th>
+                                <th>Role</th>
+                                <th>Tickets Handled</th>
+                                <th>Avg Resolution Time (Days)</th>
+                                <th>Performance Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for staff in staff_performance %}
+                            <tr>
+                                <td>{{ staff.full_name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if staff.role == 'admin' else 'warning' }}">
+                                        {{ staff.role.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ staff.tickets_handled }}</td>
+                                <td>{{ "%.1f"|format(staff.avg_resolution_days or 0) }}</td>
+                                <td>
+                                    {% set avg_days = staff.avg_resolution_days or 0 %}
+                                    {% if avg_days <= 1 %}
+                                        <span class="badge bg-success">Excellent</span>
+                                    {% elif avg_days <= 2 %}
+                                        <span class="badge bg-info">Good</span>
+                                    {% elif avg_days <= 3 %}
+                                        <span class="badge bg-warning">Average</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Needs Improvement</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overdue Tickets -->
+{% if overdue_tickets %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Overdue Tickets ({{ overdue_tickets|length }})</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Location</th>
+                                <th>Priority</th>
+                                <th>Due Date</th>
+                                <th>Days Overdue</th>
+                                <th>Assignee</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in overdue_tickets %}
+                            <tr>
+                                <td><a href="{{ url_for('ticket_detail', id=ticket.id) }}">#{{ ticket.id }}</a></td>
+                                <td>{{ ticket.location[:30] }}{% if ticket.location|length > 30 %}...{% endif %}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if ticket.priority == 'urgent' else 'warning' if ticket.priority == 'high' else 'secondary' }}">
+                                        {{ ticket.priority.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ ticket.due_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ (datetime.utcnow() - ticket.due_date).days }}</td>
+                                <td>
                                     {% if ticket.assignees %}
                                         {% for assignee in ticket.assignees %}
-                                            <span class="badge bg-secondary">{{ assignee.full_name }}</span>{% if not loop.last %}, {% endif %}
+                                            {{ assignee.full_name }}{% if not loop.last %}, {% endif %}
                                         {% endfor %}
                                     {% else %}
                                         <span class="text-muted">Unassigned</span>
                                     {% endif %}
                                 </td>
-                                <td class="col-creator">{{ ticket.creator.full_name if ticket.creator else 'N/A' }}</td>
-                                <td class="col-category">{{ ticket.category.name if ticket.category else 'N/A' }}</td>
-                                <td class="col-location">{{ ticket.location }}</td>
-                                <td class="col-status">{{ ticket.status.title() }}</td>
-                                <td class="col-created">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                <td class="col-due">{{ ticket.due_date.strftime('%Y-%m-%d') if ticket.due_date else 'N/A' }}</td>
                             </tr>
-                        {% endfor %}
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <p class="text-center text-muted">No tickets found for this period.</p>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 @media print {
-    /* Hide navigation and print button when printing */
-    .navbar, .btn, .no-print {
-        display: none !important;
-    }
-    
-    /* Ensure proper page breaks */
-    .card {
-        break-inside: avoid;
-        margin-bottom: 20px;
-    }
-    
-    /* Better table printing */
-    table {
-        width: 100% !important;
-        font-size: 12px;
-    }
-    
-    /* Chart containers for print */
-    canvas {
-        max-width: 100% !important;
-        height: auto !important;
-    }
-    
-    /* Print header */
-    body::before {
-        content: "ICT Helpdesk Report - Generated on {{ datetime.utcnow().strftime('%Y-%m-%d %H:%M') }}";
-        display: block;
-        text-align: center;
-        font-weight: bold;
-        margin-bottom: 20px;
-        padding: 10px;
-        border-bottom: 2px solid #000;
-    }
-    
-    /* Adjust colors for print */
-    .card {
-        border: 1px solid #000 !important;
-    }
-    
-    .bg-primary, .bg-success, .bg-info, .bg-warning {
-        background-color: #f8f9fa !important;
-        color: #000 !important;
-        border: 1px solid #000 !important;
-    }
+    .btn, .navbar, .card-header { display: none !important; }
+    .card { border: 1px solid #000 !important; margin-bottom: 20px; }
+    body { font-size: 12px; }
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function printReport() {
-    // Hide elements that shouldn't be printed
-    const elementsToHide = document.querySelectorAll('.btn, .navbar');
-    elementsToHide.forEach(el => el.classList.add('no-print'));
-    
-    // Print the page
-    window.print();
-    
-    // Restore hidden elements after printing
-    setTimeout(() => {
-        elementsToHide.forEach(el => el.classList.remove('no-print'));
-    }, 1000);
-}
-
-// Column toggle logic
-window.addEventListener('DOMContentLoaded', function() {
-    const toggles = document.querySelectorAll('.report-col-toggle');
-    toggles.forEach(toggle => {
-        toggle.addEventListener('change', function() {
-            const colClass = this.getAttribute('data-col');
-            const checked = this.checked;
-            document.querySelectorAll('.' + colClass).forEach(cell => {
-                cell.style.display = checked ? '' : 'none';
-            });
-        });
-    });
-});
-</script>
-<script>
-// Status Chart
-{% if status_stats and (status_stats|length > 0) %}
+// Status Distribution Chart
 const statusCtx = document.getElementById('statusChart').getContext('2d');
-const statusLabels = [{% for stat in status_stats %}'{{ stat.status.replace('_', ' ').title() }}'{% if not loop.last %}, {% endif %}{% endfor %}];
-const statusData = [{% for stat in status_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}];
 new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: statusLabels,
+        labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
         datasets: [{
-            data: statusData,
-            backgroundColor: [
-                '#0d6efd', // open - primary
-                '#ffc107', // in_progress - warning  
-                '#198754', // resolved - success
-                '#6c757d'  // closed - secondary
-            ]
+            data: [{{ open_tickets }}, {{ in_progress_tickets }}, {{ resolved_tickets }}, {{ closed_tickets }}],
+            backgroundColor: ['#ffc107', '#0dcaf0', '#198754', '#6c757d']
         }]
     },
     options: {
         responsive: true,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            }
-        }
+        plugins: { legend: { position: 'bottom' } }
     }
 });
-{% endif %}
 
-// Priority Chart
-{% if priority_stats and (priority_stats|length > 0) %}
+// Priority Distribution Chart
 const priorityCtx = document.getElementById('priorityChart').getContext('2d');
-const priorityLabels = [{% for stat in priority_stats %}'{{ stat.priority.title() }}'{% if not loop.last %}, {% endif %}{% endfor %}];
-const priorityData = [{% for stat in priority_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}];
 new Chart(priorityCtx, {
     type: 'bar',
     data: {
-        labels: priorityLabels,
+        labels: [{% for stat in priority_stats %}'{{ stat.priority.title() }}'{% if not loop.last %}, {% endif %}{% endfor %}],
         datasets: [{
             label: 'Tickets',
-            data: priorityData,
-            backgroundColor: [
-                '#6c757d', // low - secondary
-                '#ffc107', // medium - warning
-                '#dc3545', // high - danger
-                '#dc3545'  // urgent - danger
-            ]
+            data: [{% for stat in priority_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: ['#6c757d', '#ffc107', '#fd7e14', '#dc3545']
         }]
     },
     options: {
         responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false
-            }
-        }
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
     }
 });
-{% endif %}
+
+// Trend Chart
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: [{% for trend in trend_data %}'{{ trend.date }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Tickets Created',
+            data: [{% for trend in trend_data %}{{ trend.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+function printReport() {
+    window.print();
+}
+
+function exportToCSV() {
+    const data = [
+        ['Ticket ID', 'Location', 'Status', 'Priority', 'Category', 'Created', 'Assignee'],
+        {% for ticket in tickets %}
+        [
+            '{{ ticket.id }}',
+            '{{ ticket.location|replace("'", "\\'") }}',
+            '{{ ticket.status }}',
+            '{{ ticket.priority }}',
+            '{{ ticket.category.name if ticket.category else "N/A" }}',
+            '{{ ticket.created_at.strftime("%Y-%m-%d") }}',
+            '{% if ticket.assignees %}{% for assignee in ticket.assignees %}{{ assignee.full_name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Unassigned{% endif %}'
+        ]{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const csv = data.map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'helpdesk_report_{{ start_date }}_to_{{ end_date }}.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
 </script>
 {% endblock %}

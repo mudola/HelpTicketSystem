@@ -559,59 +559,84 @@ def reports_pdf():
     if current_user.role != 'admin':
         abort(403)
     
-    # Get same data as regular reports
+    # Use same logic as main reports route for consistency
     days = request.args.get('days', 30, type=int)
     start_date = datetime.utcnow() - timedelta(days=days)
+    end_date = datetime.utcnow()
     
-    # Ticket statistics
-    total_tickets = Ticket.query.filter(Ticket.created_at >= start_date).count()
-    closed_tickets = Ticket.query.filter(
+    # Custom date range
+    custom_start = request.args.get('start_date')
+    custom_end = request.args.get('end_date')
+    if custom_start and custom_end:
+        try:
+            start_date = datetime.strptime(custom_start, '%Y-%m-%d')
+            end_date = datetime.strptime(custom_end, '%Y-%m-%d')
+        except ValueError:
+            pass
+    
+    # Filter parameters
+    status_filter = request.args.get('status', '')
+    priority_filter = request.args.get('priority', '')
+    category_filter = request.args.get('category', type=int)
+    department_filter = request.args.get('department', '')
+    
+    # Build ticket query with filters
+    ticket_query = Ticket.query.filter(
         Ticket.created_at >= start_date,
-        Ticket.status == 'closed'
-    ).count()
+        Ticket.created_at <= end_date
+    )
     
-    # Activity by user
-    user_activity = db.session.query(
+    if status_filter:
+        ticket_query = ticket_query.filter(Ticket.status == status_filter)
+    if priority_filter:
+        ticket_query = ticket_query.filter(Ticket.priority == priority_filter)
+    if category_filter:
+        ticket_query = ticket_query.filter(Ticket.category_id == category_filter)
+    if department_filter:
+        ticket_query = ticket_query.filter(Ticket.location.contains(department_filter))
+    
+    tickets = ticket_query.all()
+    
+    # Calculate statistics
+    total_tickets = len(tickets)
+    closed_tickets = len([t for t in tickets if t.status == 'closed'])
+    
+    # Staff performance
+    staff_performance = db.session.query(
         User.full_name,
         User.role,
-        func.count(Ticket.id).label('tickets_created')
-    ).join(Ticket, User.id == Ticket.created_by_id)\
-     .filter(Ticket.created_at >= start_date)\
-     .group_by(User.id, User.full_name, User.role)\
-     .all()
-    
-    # Intern activity (fix for many-to-many assignees, correct indentation)
-    intern_activity = db.session.query(
-        User.full_name,
-        func.count(Ticket.id).label('tickets_assigned')
+        func.count(Ticket.id).label('tickets_handled')
     ).join(User.assigned_tickets)\
-    .filter(Ticket.created_at >= start_date, User.role == 'intern')\
-    .group_by(User.id, User.full_name)\
-    .all()
+     .filter(
+         Ticket.created_at >= start_date,
+         Ticket.created_at <= end_date,
+         User.role.in_(['admin', 'intern'])
+     ).group_by(User.id, User.full_name, User.role).all()
     
-    # Tickets by status
-    status_stats = db.session.query(
-        Ticket.status,
+    # Category stats
+    category_stats = db.session.query(
+        Category.name,
         func.count(Ticket.id).label('count')
-    ).filter(Ticket.created_at >= start_date)\
-     .group_by(Ticket.status)\
-     .all()
+    ).join(Ticket, Category.id == Ticket.category_id)\
+     .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
     
-    # Tickets by priority
-    priority_stats = db.session.query(
-        Ticket.priority,
-        func.count(Ticket.id).label('count')
-    ).filter(Ticket.created_at >= start_date)\
-     .group_by(Ticket.priority)\
-     .all()
+    if category_filter:
+        category_stats = category_stats.filter(Category.id == category_filter)
+        
+    category_stats = category_stats.group_by(Category.name).all()
+    
+    # Priority and status stats
+    priority_stats = {}
+    status_stats = {}
+    for t in tickets:
+        priority_stats[t.priority] = priority_stats.get(t.priority, 0) + 1
+        status_stats[t.status] = status_stats.get(t.status, 0) + 1
+    
+    priority_stats = [{'priority': k, 'count': v} for k, v in priority_stats.items()]
+    status_stats = [{'status': k, 'count': v} for k, v in status_stats.items()]
     
     # Average resolution time
-    resolved_tickets = Ticket.query.filter(
-        Ticket.created_at >= start_date,
-        Ticket.status.in_(['resolved', 'closed']),
-        Ticket.closed_at.isnot(None)
-    ).all()
-    
+    resolved_tickets = [t for t in tickets if t.status in ['resolved', 'closed'] and t.closed_at]
     avg_resolution_time = None
     if resolved_tickets:
         total_time = sum([(t.closed_at - t.created_at).total_seconds() for t in resolved_tickets])
@@ -620,12 +645,15 @@ def reports_pdf():
     return render_template('reports_pdf.html',
                          total_tickets=total_tickets,
                          closed_tickets=closed_tickets,
-                         user_activity=user_activity,
-                         intern_activity=intern_activity,
+                         staff_performance=staff_performance,
+                         category_stats=category_stats,
                          status_stats=status_stats,
                          priority_stats=priority_stats,
                          avg_resolution_time=avg_resolution_time,
+                         tickets=tickets[:50],  # Limit for PDF
                          days=days,
+                         start_date=start_date.strftime('%Y-%m-%d'),
+                         end_date=end_date.strftime('%Y-%m-%d'),
                          generated_date=datetime.utcnow())
 
 @app.route('/reports')
@@ -634,85 +662,187 @@ def reports():
     if current_user.role != 'admin':
         abort(403)
 
-    # Date range filter
+    # Enhanced filters
     days = request.args.get('days', 30, type=int)
     start_date = datetime.utcnow() - timedelta(days=days)
+    end_date = datetime.utcnow()
+    
+    # Custom date range
+    custom_start = request.args.get('start_date')
+    custom_end = request.args.get('end_date')
+    if custom_start and custom_end:
+        try:
+            start_date = datetime.strptime(custom_start, '%Y-%m-%d')
+            end_date = datetime.strptime(custom_end, '%Y-%m-%d')
+            days = (end_date - start_date).days
+        except ValueError:
+            pass
 
+    # Filter parameters
     created_by = request.args.get('created_by', type=int)
     attended_by = request.args.get('attended_by', type=int)
+    status_filter = request.args.get('status', '')
+    priority_filter = request.args.get('priority', '')
+    category_filter = request.args.get('category', type=int)
+    department_filter = request.args.get('department', '')
 
-    # All users for dropdowns
+    # All reference data for dropdowns
     all_users = User.query.order_by(User.full_name).all()
+    all_categories = Category.query.order_by(Category.name).all()
+    departments = ['SWA', 'UHS', 'Confucius', 'Chiromo', 'Halls']
 
-    # Build ticket query with filters
-    ticket_query = Ticket.query.filter(Ticket.created_at >= start_date)
+    # Build ticket query with enhanced filters
+    ticket_query = Ticket.query.filter(
+        Ticket.created_at >= start_date,
+        Ticket.created_at <= end_date
+    )
+    
     if created_by:
         ticket_query = ticket_query.filter(Ticket.created_by_id == created_by)
     if attended_by:
         ticket_query = ticket_query.filter(Ticket.assignees.any(User.id == attended_by))
+    if status_filter:
+        ticket_query = ticket_query.filter(Ticket.status == status_filter)
+    if priority_filter:
+        ticket_query = ticket_query.filter(Ticket.priority == priority_filter)
+    if category_filter:
+        ticket_query = ticket_query.filter(Ticket.category_id == category_filter)
+    if department_filter:
+        ticket_query = ticket_query.filter(Ticket.location.contains(department_filter))
+    
     tickets = ticket_query.all()
 
-    # Ticket statistics (filtered)
+    # Enhanced statistics
     total_tickets = len(tickets)
+    open_tickets = len([t for t in tickets if t.status == 'open'])
+    in_progress_tickets = len([t for t in tickets if t.status == 'in_progress'])
+    resolved_tickets = len([t for t in tickets if t.status == 'resolved'])
     closed_tickets = len([t for t in tickets if t.status == 'closed'])
 
-    # Activity by user (unfiltered, for summary)
-    user_activity = db.session.query(
+    # Tickets by category
+    category_stats = db.session.query(
+        Category.name,
+        func.count(Ticket.id).label('count')
+    ).join(Ticket, Category.id == Ticket.category_id)\
+     .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+    
+    if category_filter:
+        category_stats = category_stats.filter(Category.id == category_filter)
+    if department_filter:
+        category_stats = category_stats.filter(Ticket.location.contains(department_filter))
+        
+    category_stats = category_stats.group_by(Category.name).all()
+
+    # Tickets by department/location
+    department_stats = {}
+    for ticket in tickets:
+        dept = 'Other'
+        for d in departments:
+            if d.lower() in ticket.location.lower():
+                dept = d
+                break
+        department_stats[dept] = department_stats.get(dept, 0) + 1
+    department_stats = [{'department': k, 'count': v} for k, v in department_stats.items()]
+
+    # Staff performance
+    staff_performance = db.session.query(
         User.full_name,
         User.role,
-        func.count(Ticket.id).label('tickets_created')
-    ).join(Ticket, User.id == Ticket.created_by_id)\
-     .filter(Ticket.created_at >= start_date)\
-     .group_by(User.id, User.full_name, User.role)\
-     .all()
-
-    # Intern activity (unfiltered, for summary)
-    intern_activity = db.session.query(
-        User.full_name,
-        func.count(Ticket.id).label('tickets_assigned')
+        func.count(Ticket.id).label('tickets_handled'),
+        func.avg(
+            func.julianday(Ticket.closed_at) - func.julianday(Ticket.created_at)
+        ).label('avg_resolution_days')
     ).join(User.assigned_tickets)\
-    .filter(Ticket.created_at >= start_date, User.role == 'intern')\
-    .group_by(User.id, User.full_name)\
-    .all()
+     .filter(
+         Ticket.created_at >= start_date,
+         Ticket.created_at <= end_date,
+         Ticket.status.in_(['resolved', 'closed']),
+         User.role.in_(['admin', 'intern'])
+     )
+    
+    if attended_by:
+        staff_performance = staff_performance.filter(User.id == attended_by)
+        
+    staff_performance = staff_performance.group_by(User.id, User.full_name, User.role).all()
 
-    # Tickets by status (filtered)
-    status_stats = {}
-    for t in tickets:
-        status_stats[t.status] = status_stats.get(t.status, 0) + 1
-    status_stats = [{'status': k, 'count': v} for k, v in status_stats.items()]
+    # Response and resolution times
+    tickets_with_times = [t for t in tickets if t.status in ['resolved', 'closed'] and t.closed_at]
+    avg_resolution_time = None
+    resolution_times = []
+    
+    if tickets_with_times:
+        total_time = sum([(t.closed_at - t.created_at).total_seconds() for t in tickets_with_times])
+        avg_resolution_time = total_time / len(tickets_with_times) / 3600  # in hours
+        resolution_times = [
+            {
+                'ticket_id': t.id,
+                'hours': (t.closed_at - t.created_at).total_seconds() / 3600
+            } for t in tickets_with_times
+        ]
 
-    # Tickets by priority (filtered)
+    # Overdue tickets
+    overdue_tickets = []
+    for ticket in tickets:
+        if ticket.due_date and ticket.status not in ['resolved', 'closed']:
+            if datetime.utcnow() > ticket.due_date:
+                overdue_tickets.append(ticket)
+
+    # Priority distribution
     priority_stats = {}
     for t in tickets:
         priority_stats[t.priority] = priority_stats.get(t.priority, 0) + 1
     priority_stats = [{'priority': k, 'count': v} for k, v in priority_stats.items()]
 
-    # Average resolution time (filtered)
-    resolved_tickets = [t for t in tickets if t.status in ['resolved', 'closed'] and t.closed_at]
-    avg_resolution_time = None
-    if resolved_tickets:
-        total_time = sum([(t.closed_at - t.created_at).total_seconds() for t in resolved_tickets])
-        avg_resolution_time = total_time / len(resolved_tickets) / 3600  # in hours
+    # Status distribution
+    status_stats = [
+        {'status': 'open', 'count': open_tickets},
+        {'status': 'in_progress', 'count': in_progress_tickets},
+        {'status': 'resolved', 'count': resolved_tickets},
+        {'status': 'closed', 'count': closed_tickets}
+    ]
 
-    # Detailed ticket list with creator and history (filtered)
-    from models import TicketHistory
-    ticket_histories = {t.id: TicketHistory.query.filter_by(ticket_id=t.id).order_by(TicketHistory.timestamp).all() for t in tickets}
+    # Trend data (last 7 days)
+    trend_data = []
+    for i in range(7):
+        date = datetime.utcnow() - timedelta(days=i)
+        day_tickets = Ticket.query.filter(
+            func.date(Ticket.created_at) == date.date()
+        ).count()
+        trend_data.append({
+            'date': date.strftime('%Y-%m-%d'),
+            'count': day_tickets
+        })
+    trend_data.reverse()
 
     return render_template('reports.html',
                          total_tickets=total_tickets,
+                         open_tickets=open_tickets,
+                         in_progress_tickets=in_progress_tickets,
+                         resolved_tickets=resolved_tickets,
                          closed_tickets=closed_tickets,
-                         user_activity=user_activity,
-                         intern_activity=intern_activity,
-                         status_stats=status_stats,
+                         category_stats=category_stats,
+                         department_stats=department_stats,
+                         staff_performance=staff_performance,
                          priority_stats=priority_stats,
+                         status_stats=status_stats,
                          avg_resolution_time=avg_resolution_time,
+                         resolution_times=resolution_times,
+                         overdue_tickets=overdue_tickets,
+                         trend_data=trend_data,
                          days=days,
+                         start_date=start_date.strftime('%Y-%m-%d'),
+                         end_date=end_date.strftime('%Y-%m-%d'),
                          datetime=datetime,
                          tickets=tickets,
-                         ticket_histories=ticket_histories,
                          all_users=all_users,
+                         all_categories=all_categories,
+                         departments=departments,
                          created_by=created_by or '',
-                         attended_by=attended_by or '')
+                         attended_by=attended_by or '',
+                         status_filter=status_filter,
+                         priority_filter=priority_filter,
+                         category_filter=category_filter or '',
+                         department_filter=department_filter)
 
 @app.route('/admin/users')
 @login_required
@@ -945,3 +1075,51 @@ def api_notifications():
             'link': url_for('ticket_detail', id=t.id)
         })
     return jsonify(notifications)
+
+
+@app.route('/analytics')
+@login_required
+def analytics_dashboard():
+    if current_user.role != 'admin':
+        abort(403)
+    
+    # Quick stats for last 30 days
+    start_date = datetime.utcnow() - timedelta(days=30)
+    
+    # Key performance indicators
+    total_tickets = Ticket.query.filter(Ticket.created_at >= start_date).count()
+    resolved_this_month = Ticket.query.filter(
+        Ticket.created_at >= start_date,
+        Ticket.status.in_(['resolved', 'closed'])
+    ).count()
+    
+    # SLA compliance (assuming 2-day target)
+    sla_compliant = 0
+    sla_total = 0
+    for ticket in Ticket.query.filter(
+        Ticket.created_at >= start_date,
+        Ticket.status.in_(['resolved', 'closed']),
+        Ticket.closed_at.isnot(None)
+    ).all():
+        sla_total += 1
+        resolution_time = (ticket.closed_at - ticket.created_at).total_seconds() / 3600
+        if resolution_time <= 48:  # 48 hours = 2 days
+            sla_compliant += 1
+    
+    sla_percentage = (sla_compliant / sla_total * 100) if sla_total > 0 else 0
+    
+    # Top categories
+    top_categories = db.session.query(
+        Category.name,
+        func.count(Ticket.id).label('count')
+    ).join(Ticket, Category.id == Ticket.category_id)\
+     .filter(Ticket.created_at >= start_date)\
+     .group_by(Category.name)\
+     .order_by(func.count(Ticket.id).desc())\
+     .limit(5).all()
+    
+    return render_template('analytics_dashboard.html',
+                         total_tickets=total_tickets,
+                         resolved_this_month=resolved_this_month,
+                         sla_percentage=sla_percentage,
+                         top_categories=top_categories)
