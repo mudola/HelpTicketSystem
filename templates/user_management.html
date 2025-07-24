@@ -64,6 +64,7 @@
                                         {% if user.id != current_user.id %}
                                         <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.id) }}" style="display: inline;" 
                                               onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if user.is_active else 'activate' }} {{ user.full_name }}?')">
+                                            {{ status_form.hidden_tag() }}
                                             <button type="submit" class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}" 
                                                     title="{{ 'Deactivate' if user.is_active else 'Activate' }} User">
                                                 <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
@@ -71,6 +72,7 @@
                                         </form>
                                         <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display: inline;" 
                                               onsubmit="return confirm('Are you sure you want to delete {{ user.full_name }}? This action cannot be undone.')">
+                                            {{ status_form.hidden_tag() }}
                                             <button type="submit" class="btn btn-danger btn-sm" title="Delete User">
                                                 <i class="fas fa-trash"></i>
                                             </button>
