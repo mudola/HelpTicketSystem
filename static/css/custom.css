@@ -225,6 +225,133 @@ body, html {
     border-color: var(--primary-100);
 }
 
+/* Uniform Stats Cards */
+.stats-card {
+    border: none;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: var(--surface);
+    cursor: pointer;
+    position: relative;
+    box-shadow: var(--shadow);
+}
+
+.stats-card:hover,
+.clickable-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+}
+
+.clickable-card {
+    position: relative;
+    cursor: pointer;
+}
+
+.clickable-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.clickable-card:hover::after {
+    opacity: 1;
+}
+
+.clickable-card:active {
+    transform: translateY(-4px) scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+/* Card Color Variants */
+.stats-card.card-primary { 
+    border-left: 4px solid var(--primary);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, var(--surface) 100%);
+}
+.stats-card.card-warning { 
+    border-left: 4px solid var(--warning);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, var(--surface) 100%);
+}
+.stats-card.card-info { 
+    border-left: 4px solid var(--info);
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, var(--surface) 100%);
+}
+.stats-card.card-success { 
+    border-left: 4px solid var(--success);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, var(--surface) 100%);
+}
+.stats-card.card-secondary { 
+    border-left: 4px solid var(--gray-500);
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.05) 0%, var(--surface) 100%);
+}
+.stats-card.card-danger { 
+    border-left: 4px solid var(--danger);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, var(--surface) 100%);
+}
+
+.stats-card .card-body {
+    display: flex;
+    align-items: center;
+    padding: var(--space-6);
+    position: relative;
+    z-index: 1;
+}
+
+.stats-icon {
+    font-size: 2.5rem;
+    margin-right: var(--space-4);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover .stats-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.stats-content {
+    flex: 1;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stats-label {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.stats-progress {
+    margin-top: var(--space-2);
+    height: 4px;
+    background: var(--gray-200);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.stats-progress .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    transition: width 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 2px;
+}
+
 .card-header {
     background: linear-gradient(135deg, var(--surface) 0%, var(--surface-alt) 100%);
     border-bottom: 1px solid var(--border-light);
@@ -664,6 +791,44 @@ body, html {
 /* =====================
    Responsive Design
    ===================== */
+
+/* Stats Cards Responsive */
+@media (max-width: 1200px) {
+    .stats-card .card-body {
+        padding: var(--space-5);
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stats-icon {
+        font-size: 2rem;
+        margin-right: 0;
+        margin-bottom: var(--space-2);
+    }
+    
+    .stats-number {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .stats-card .card-body {
+        padding: var(--space-4);
+    }
+    
+    .stats-icon {
+        font-size: 1.75rem;
+    }
+    
+    .stats-number {
+        font-size: 1.5rem;
+    }
+    
+    .stats-label {
+        font-size: 0.8rem;
+    }
+}
+
 @media (max-width: 768px) {
     .container-fluid {
         padding: 0 var(--space-3);
@@ -711,6 +876,58 @@ body, html {
     .table tbody td {
         padding: var(--space-3);
     }
+
+    /* Stats cards mobile */
+    .stats-card .card-body {
+        padding: var(--space-3);
+    }
+    
+    .stats-icon {
+        font-size: 1.5rem;
+    }
+    
+    .stats-number {
+        font-size: 1.25rem;
+    }
+    
+    .stats-label {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Two cards per row on mobile */
+    .col-xl-2 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .stats-card .card-body {
+        padding: var(--space-2);
+    }
+    
+    .stats-icon {
+        font-size: 1.25rem;
+        margin-bottom: var(--space-1);
+    }
+    
+    .stats-number {
+        font-size: 1.1rem;
+    }
+    
+    .stats-label {
+        font-size: 0.7rem;
+    }
+}
+
+/* Clickable row styles */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+    background-color: var(--surface-alt);
 }
 
 @media (max-width: 480px) {
@@ -826,6 +1043,68 @@ body, html {
 
 .font-bold {
     font-weight: 700;
+}
+
+/* Card interaction utilities */
+.card-hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.ripple-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple-animation 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Loading and animation states */
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scale-in {
+    animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* =====================

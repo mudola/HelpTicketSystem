@@ -4,174 +4,194 @@
 {% block title %}Reports - ICT Helpdesk{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <h2><i class="fas fa-chart-bar me-2"></i>Comprehensive Reports Dashboard</h2>
-    <div class="d-flex gap-2 flex-wrap">
-        <button onclick="printReport()" class="btn btn-primary">
-            <i class="fas fa-print me-1"></i>Print Report
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line me-2"></i>Reports & Analytics</h2>
+    <div class="btn-group">
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i class="fas fa-print me-2"></i>Print Report
         </button>
-        <a href="{{ url_for('reports_pdf', days=days, start_date=start_date, end_date=end_date) }}" target="_blank" class="btn btn-success">
-            <i class="fas fa-file-pdf me-1"></i>Export PDF
+        <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-2"></i>View All Tickets
         </a>
-        <button onclick="exportToCSV()" class="btn btn-info">
-            <i class="fas fa-file-csv me-1"></i>Export CSV
-        </button>
     </div>
 </div>
 
-<!-- Enhanced Filters Card -->
+<!-- Date Range and Filters -->
 <div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Report Filters</h5>
     </div>
     <div class="card-body">
-        <form method="get" class="row g-3" id="reportFilterForm">
-            <div class="col-md-3">
+        <form method="GET" action="{{ url_for('reports') }}" class="row g-3">
+            <div class="col-md-2">
                 <label class="form-label">Date Range</label>
-                <div class="btn-group d-block">
-                    <a href="{{ url_for('reports', days=7) }}" class="btn btn-outline-secondary btn-sm {% if days == 7 %}active{% endif %}">7 Days</a>
-                    <a href="{{ url_for('reports', days=30) }}" class="btn btn-outline-secondary btn-sm {% if days == 30 %}active{% endif %}">30 Days</a>
-                    <a href="{{ url_for('reports', days=90) }}" class="btn btn-outline-secondary btn-sm {% if days == 90 %}active{% endif %}">90 Days</a>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="date_range" value="7" id="date7" {% if request.args.get('date_range', '30') == '7' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary btn-sm" for="date7">7 Days</label>
+                    
+                    <input type="radio" class="btn-check" name="date_range" value="30" id="date30" {% if request.args.get('date_range', '30') == '30' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary btn-sm" for="date30">30 Days</label>
+                    
+                    <input type="radio" class="btn-check" name="date_range" value="90" id="date90" {% if request.args.get('date_range', '30') == '90' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary btn-sm" for="date90">90 Days</label>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Custom Start Date</label>
-                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Custom End Date</label>
-                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-control">
                     <option value="">All Statuses</option>
-                    <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
-                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
-                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
-                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+                    <option value="open" {% if request.args.get('status') == 'open' %}selected{% endif %}>Open</option>
+                    <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="resolved" {% if request.args.get('status') == 'resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="closed" {% if request.args.get('status') == 'closed' %}selected{% endif %}>Closed</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Priority</label>
-                <select name="priority" class="form-select">
+                <select name="priority" class="form-control">
                     <option value="">All Priorities</option>
-                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
-                    <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
-                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
-                    <option value="urgent" {% if priority_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                    <option value="low" {% if request.args.get('priority') == 'low' %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if request.args.get('priority') == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if request.args.get('priority') == 'high' %}selected{% endif %}>High</option>
+                    <option value="urgent" {% if request.args.get('priority') == 'urgent' %}selected{% endif %}>Urgent</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Category</label>
-                <select name="category" class="form-select">
-                    <option value="">All Categories</option>
-                    {% for category in all_categories %}
-                        <option value="{{ category.id }}" {% if category_filter|int == category.id %}selected{% endif %}>{{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Department</label>
-                <select name="department" id="department_filter" class="form-select">
-                    <option value="">All Departments</option>
-                    <option value="SWA" {% if department_filter == 'SWA' %}selected{% endif %}>SWA</option>
-                    <option value="UHS" {% if department_filter == 'UHS' %}selected{% endif %}>UHS</option>
-                    <option value="Confucius" {% if department_filter == 'Confucius' %}selected{% endif %}>Confucius</option>
-                    <option value="Chiromo" {% if department_filter == 'Chiromo' %}selected{% endif %}>Chiromo</option>
-                    <option value="Halls" {% if department_filter == 'Halls' %}selected{% endif %}>Halls</option>
-                </select>
-            </div>
-            <div class="col-md-3" id="subunit-filter-group" style="display:none;">
-                <label class="form-label">Subunit</label>
-                <select name="subunit" id="subunit_filter" class="form-select">
-                    <option value="">Select Subunit</option>
-                </select>
-            </div>
-            <div class="col-md-3" id="location-filter-group" style="display:none;">
-                <label class="form-label">Location</label>
-                <select name="location" id="location_filter" class="form-select">
-                    <option value="">Select Location</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Technician</label>
-                <select name="attended_by" class="form-select">
-                    <option value="">All Technicians</option>
-                    {% for user in all_users %}
-                        {% if user.role in ['admin', 'intern'] %}
-                            <option value="{{ user.id }}" {% if attended_by|int == user.id %}selected{% endif %}>{{ user.full_name }}</option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary me-2">
-                    <i class="fas fa-search me-1"></i>Apply Filters
-                </button>
-                <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times me-1"></i>Clear All
-                </a>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="btn-group w-100">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Apply Filters
+                    </button>
+                    <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Key Metrics Cards -->
+<!-- Statistics Cards with Clickable Functionality -->
 <div class="row mb-4">
-    <div class="col-md-2">
-        <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-ticket-alt fa-2x mb-2"></i>
-                <h4>{{ total_tickets }}</h4>
-                <p class="mb-0">Total Tickets</p>
+    <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list') }}" class="text-decoration-none">
+            <div class="stats-card card-primary clickable-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">{{ total_tickets }}</h3>
+                        <p class="stats-label">Total Tickets</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-2">
-        <div class="card bg-warning text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-folder-open fa-2x mb-2"></i>
-                <h4>{{ open_tickets }}</h4>
-                <p class="mb-0">Open</p>
+    
+    <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
+            <div class="stats-card card-warning clickable-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">{{ open_tickets }}</h3>
+                        <p class="stats-label">Open</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (open_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-2">
-        <div class="card bg-info text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-cog fa-2x mb-2"></i>
-                <h4>{{ in_progress_tickets }}</h4>
-                <p class="mb-0">In Progress</p>
+    
+    <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
+            <div class="stats-card card-info clickable-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">{{ in_progress_tickets }}</h3>
+                        <p class="stats-label">In Progress</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (in_progress_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-2">
-        <div class="card bg-success text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-check fa-2x mb-2"></i>
-                <h4>{{ resolved_tickets }}</h4>
-                <p class="mb-0">Resolved</p>
+    
+    <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='resolved') }}" class="text-decoration-none">
+            <div class="stats-card card-success clickable-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">{{ resolved_tickets }}</h3>
+                        <p class="stats-label">Resolved</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (resolved_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-2">
-        <div class="card bg-secondary text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-lock fa-2x mb-2"></i>
-                <h4>{{ closed_tickets }}</h4>
-                <p class="mb-0">Closed</p>
+    
+    <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
+            <div class="stats-card card-secondary clickable-card" data-aos="fade-up" data-aos-delay="500">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">{{ closed_tickets }}</h3>
+                        <p class="stats-label">Closed</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ (closed_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-2">
-        <div class="card bg-danger text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                <h4>{{ overdue_tickets|length }}</h4>
-                <p class="mb-0">Overdue</p>
+    
+    <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 mb-3">
+        <a href="{{ url_for('tickets_list', priority='urgent') }}" class="text-decoration-none">
+            <div class="stats-card card-danger clickable-card" data-aos="fade-up" data-aos-delay="600">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">{{ overdue_tickets|length if overdue_tickets else 0 }}</h3>
+                        <p class="stats-label">Overdue</p>
+                        <div class="stats-progress">
+                            <div class="progress-bar" style="width: {{ ((overdue_tickets|length if overdue_tickets else 0) / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -180,414 +200,434 @@
     <div class="col-md-12">
         <div class="card bg-light">
             <div class="card-body text-center">
-                <h3 class="text-primary">
-                    {% if avg_resolution_time %}
-                        {{ "%.1f"|format(avg_resolution_time) }} hours
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </h3>
-                <p class="mb-0"><strong>Average Resolution Time</strong></p>
-                <small class="text-muted">Based on {{ resolved_tickets + closed_tickets }} resolved/closed tickets</small>
+                <h2 class="text-primary mb-2">{{ average_resolution_time or "N/A" }}</h2>
+                <p class="mb-0">
+                    <strong>Average Resolution Time</strong><br>
+                    <small class="text-muted">Based on {{ resolved_tickets + closed_tickets }} resolved/closed tickets</small>
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Charts Row -->
+<!-- Priority Distribution Chart -->
 <div class="row mb-4">
-    <!-- Status Distribution -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">Ticket Status Distribution</h6>
-            </div>
-            <div class="card-body">
-                <canvas id="statusChart"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Priority Distribution -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">Priority Distribution</h6>
-            </div>
-            <div class="card-body">
-                <canvas id="priorityChart"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Trend Chart -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">7-Day Trend</h6>
-            </div>
-            <div class="card-body">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Reports Tables -->
-<div class="row mb-4">
-    <!-- Category Report -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h6 class="mb-0">Tickets by Category</h6>
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Priority Distribution</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Category</th>
-                                <th>Count</th>
-                                <th>%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stat in category_stats %}
-                            <tr>
-                                <td>{{ stat.name }}</td>
-                                <td>{{ stat.count }}</td>
-                                <td>{{ "%.1f"|format((stat.count / total_tickets * 100) if total_tickets > 0 else 0) }}%</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="priority-stats">
+                    <div class="priority-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge priority-urgent">Urgent</span>
+                            <span class="fw-bold">{{ priority_stats.urgent if priority_stats and priority_stats.urgent else 0 }}</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: {{ (priority_stats.urgent / total_tickets * 100) if total_tickets > 0 and priority_stats and priority_stats.urgent else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="priority-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge priority-high">High</span>
+                            <span class="fw-bold">{{ priority_stats.high if priority_stats and priority_stats.high else 0 }}</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: {{ (priority_stats.high / total_tickets * 100) if total_tickets > 0 and priority_stats and priority_stats.high else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="priority-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge priority-medium">Medium</span>
+                            <span class="fw-bold">{{ priority_stats.medium if priority_stats and priority_stats.medium else 0 }}</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: {{ (priority_stats.medium / total_tickets * 100) if total_tickets > 0 and priority_stats and priority_stats.medium else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="priority-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge priority-low">Low</span>
+                            <span class="fw-bold">{{ priority_stats.low if priority_stats and priority_stats.low else 0 }}</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {{ (priority_stats.low / total_tickets * 100) if total_tickets > 0 and priority_stats and priority_stats.low else 0 }}%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Department Report -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h6 class="mb-0">Tickets by Department</h6>
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Status Overview</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Department</th>
-                                <th>Count</th>
-                                <th>%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stat in department_stats %}
-                            <tr>
-                                <td>{{ stat.department }}</td>
-                                <td>{{ stat.count }}</td>
-                                <td>{{ "%.1f"|format((stat.count / total_tickets * 100) if total_tickets > 0 else 0) }}%</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="status-overview">
+                    <div class="status-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Open Tickets</span>
+                            <span class="badge bg-warning">{{ open_tickets }}</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-warning" style="width: {{ (open_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="status-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>In Progress</span>
+                            <span class="badge bg-info">{{ in_progress_tickets }}</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-info" style="width: {{ (in_progress_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="status-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Resolved</span>
+                            <span class="badge bg-success">{{ resolved_tickets }}</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: {{ (resolved_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Closed</span>
+                            <span class="badge bg-secondary">{{ closed_tickets }}</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-secondary" style="width: {{ (closed_tickets / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Staff Performance -->
-<div class="row mb-4">
+<!-- Recent Activity Table -->
+<div class="row">
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h6 class="mb-0">Staff Performance Report</h6>
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Ticket Activity</h5>
             </div>
             <div class="card-body">
+                {% if recent_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Staff Member</th>
-                                <th>Role</th>
-                                <th>Tickets Handled</th>
-                                <th>Avg Resolution Time (Days)</th>
-                                <th>Performance Rating</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for staff in staff_performance %}
-                            <tr>
-                                <td>{{ staff.full_name }}</td>
-                                <td>
-                                    <span class="badge bg-{{ 'danger' if staff.role == 'admin' else 'warning' }}">
-                                        {{ staff.role.title() }}
-                                    </span>
-                                </td>
-                                <td>{{ staff.tickets_handled }}</td>
-                                <td>{{ "%.1f"|format(staff.avg_resolution_days or 0) }}</td>
-                                <td>
-                                    {% set avg_days = staff.avg_resolution_days or 0 %}
-                                    {% if avg_days <= 1 %}
-                                        <span class="badge bg-success">Excellent</span>
-                                    {% elif avg_days <= 2 %}
-                                        <span class="badge bg-info">Good</span>
-                                    {% elif avg_days <= 3 %}
-                                        <span class="badge bg-warning">Average</span>
-                                    {% else %}
-                                        <span class="badge bg-danger">Needs Improvement</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Overdue Tickets -->
-{% if overdue_tickets %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Overdue Tickets ({{ overdue_tickets|length }})</h6>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Location</th>
+                                <th>Title</th>
+                                <th>Status</th>
                                 <th>Priority</th>
-                                <th>Due Date</th>
-                                <th>Days Overdue</th>
-                                <th>Assignee</th>
+                                <th>Created</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for ticket in overdue_tickets %}
-                            <tr>
-                                <td><a href="{{ url_for('ticket_detail', id=ticket.id) }}">#{{ ticket.id }}</a></td>
-                                <td>{{ ticket.location[:30] }}{% if ticket.location|length > 30 %}...{% endif %}</td>
+                            {% for ticket in recent_tickets %}
+                            <tr class="clickable-row" onclick="window.location.href='{{ url_for('ticket_detail', id=ticket.id) }}'">
+                                <td>#{{ ticket.id }}</td>
+                                <td>{{ ticket.title or ticket.description[:50] + '...' if ticket.description|length > 50 else ticket.description }}</td>
+                                <td><span class="badge {{ ticket.status|status_badge }}">{{ ticket.status.replace('_', ' ').title() }}</span></td>
+                                <td><span class="badge {{ ticket.priority|priority_badge }}">{{ ticket.priority.title() }}</span></td>
+                                <td>{{ ticket.created_at|format_datetime }}</td>
+                                <td>{{ ticket.updated_at|format_datetime }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 'danger' if ticket.priority == 'urgent' else 'warning' if ticket.priority == 'high' else 'secondary' }}">
-                                        {{ ticket.priority.title() }}
-                                    </span>
-                                </td>
-                                <td>{{ ticket.due_date.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ (datetime.utcnow() - ticket.due_date).days }}</td>
-                                <td>
-                                    {% if ticket.assignees %}
-                                        {% for assignee in ticket.assignees %}
-                                            {{ assignee.full_name }}{% if not loop.last %}, {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <span class="text-muted">Unassigned</span>
-                                    {% endif %}
+                                    <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation()">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No recent activity</h5>
+                    <p class="text-muted">No tickets found for the selected criteria.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
-
-{% endblock %}
-
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+/* Reports Page Custom Styles */
+.stats-card {
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: white;
+    cursor: pointer;
+    position: relative;
+}
+
+.stats-card:hover,
+.clickable-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+.clickable-card {
+    position: relative;
+}
+
+.clickable-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.clickable-card:hover::after {
+    opacity: 1;
+}
+
+.clickable-card:active {
+    transform: translateY(-4px);
+    transition: transform 0.1s ease;
+}
+
+.stats-card.card-primary { border-left: 4px solid #007bff; }
+.stats-card.card-warning { border-left: 4px solid #ffc107; }
+.stats-card.card-info { border-left: 4px solid #17a2b8; }
+.stats-card.card-success { border-left: 4px solid #28a745; }
+.stats-card.card-secondary { border-left: 4px solid #6c757d; }
+.stats-card.card-danger { border-left: 4px solid #dc3545; }
+
+.stats-card .card-body {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.stats-icon {
+    font-size: 2.5rem;
+    margin-right: 1rem;
+    opacity: 0.8;
+}
+
+.stats-content {
+    flex: 1;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    color: #333;
+}
+
+.stats-label {
+    color: #666;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.stats-progress {
+    margin-top: 0.5rem;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 1s ease;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f8f9fa;
+}
+
+.priority-stats .priority-item {
+    margin-bottom: 1rem;
+}
+
+.status-overview .status-item {
+    margin-bottom: 1rem;
+}
+
+/* Print styles */
 @media print {
-    .btn, .navbar, .card-header { display: none !important; }
-    .card { border: 1px solid #000 !important; margin-bottom: 20px; }
-    body { font-size: 12px; }
+    .btn, .navbar, .card-header .btn-group { 
+        display: none !important; 
+    }
+    .card { 
+        border: 1px solid #000 !important; 
+        margin-bottom: 20px; 
+        break-inside: avoid;
+    }
+    body { 
+        font-size: 12px; 
+    }
+    .stats-card:hover,
+    .clickable-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .stats-card .card-body {
+        padding: 1.25rem;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stats-icon {
+        font-size: 2rem;
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-number {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-card .card-body {
+        padding: 1rem;
+    }
+    
+    .stats-icon {
+        font-size: 1.75rem;
+    }
+    
+    .stats-number {
+        font-size: 1.5rem;
+    }
+    
+    .stats-label {
+        font-size: 0.8rem;
+    }
+    
+    .clickable-row {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .col-xl-2 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .stats-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .stats-icon {
+        font-size: 1.5rem;
+    }
+    
+    .stats-number {
+        font-size: 1.25rem;
+    }
 }
 </style>
 
 <script>
-// Status Distribution Chart
-const statusCtx = document.getElementById('statusChart').getContext('2d');
-new Chart(statusCtx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
-        datasets: [{
-            data: [{{ open_tickets }}, {{ in_progress_tickets }}, {{ resolved_tickets }}, {{ closed_tickets }}],
-            backgroundColor: ['#ffc107', '#0dcaf0', '#198754', '#6c757d']
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } }
-    }
+// Add click animations and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Add ripple effect to clickable cards
+    const clickableCards = document.querySelectorAll('.clickable-card');
+    
+    clickableCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+    
+    // Animate numbers on page load
+    const statsNumbers = document.querySelectorAll('.stats-number');
+    statsNumbers.forEach(numberElement => {
+        const finalNumber = parseInt(numberElement.textContent);
+        if (finalNumber > 0) {
+            animateNumber(numberElement, finalNumber);
+        }
+    });
 });
 
-// Priority Distribution Chart
-const priorityCtx = document.getElementById('priorityChart').getContext('2d');
-new Chart(priorityCtx, {
-    type: 'bar',
-    data: {
-        labels: [{% for stat in priority_stats %}'{{ stat.priority.title() }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-        datasets: [{
-            label: 'Tickets',
-            data: [{% for stat in priority_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: ['#6c757d', '#ffc107', '#fd7e14', '#dc3545']
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } },
-        plugins: { legend: { display: false } }
-    }
-});
-
-// Trend Chart
-const trendCtx = document.getElementById('trendChart').getContext('2d');
-new Chart(trendCtx, {
-    type: 'line',
-    data: {
-        labels: [{% for trend in trend_data %}'{{ trend.date }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-        datasets: [{
-            label: 'Tickets Created',
-            data: [{% for trend in trend_data %}{{ trend.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
-            borderColor: '#0d6efd',
-            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-            tension: 0.4
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-    }
-});
-
-function printReport() {
-    window.print();
+function animateNumber(element, target) {
+    let current = 0;
+    const increment = target / 30;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+    }, 50);
 }
 
-function exportToCSV() {
-    const data = [
-        ['Ticket ID', 'Location', 'Status', 'Priority', 'Category', 'Created', 'Assignee'],
-        {% for ticket in tickets %}
-        [
-            '{{ ticket.id }}',
-            '{{ ticket.location|replace("'", "\\'") }}',
-            '{{ ticket.status }}',
-            '{{ ticket.priority }}',
-            '{{ ticket.category.name if ticket.category else "N/A" }}',
-            '{{ ticket.created_at.strftime("%Y-%m-%d") }}',
-            '{% if ticket.assignees %}{% for assignee in ticket.assignees %}{{ assignee.full_name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Unassigned{% endif %}'
-        ]{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ];
+// Add CSS for ripple effect
+const style = document.createElement('style');
+style.textContent = `
+    .clickable-card {
+        position: relative;
+        overflow: hidden;
+    }
     
-    const csv = data.map(row => row.map(field => `"${field}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'helpdesk_report_{{ start_date }}_to_{{ end_date }}.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
-
-// Cascading dropdown functionality
-const departmentFilter = document.getElementById('department_filter');
-const subunitFilterGroup = document.getElementById('subunit-filter-group');
-const subunitFilter = document.getElementById('subunit_filter');
-const locationFilterGroup = document.getElementById('location-filter-group');
-const locationFilter = document.getElementById('location_filter');
-
-const locationData = {
-    'SWA': {
-        'USHR': [
-            'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8', 'Hall 9', 'Swa Headquater', 
-            'Mamlaka Unit', 'Procurement', 'Finance Halls', 'Accounts Catering', 'Hall 12', 
-            'Hall 13', 'Stella Awinja', 'Womens Hall (Hall 20)', 'Security'
-        ],
-        'LSHR': [
-            'SMU', 'Hall 1', 'Hall 2', 'Hall 3', 'Hall 10', 'Hall 11', 'Hall 15', 
-            'Sports department', 'Kitchen 1', 'Internal Audit', 'CCU'
-        ]
-    },
-    'UHS': {
-        '': [
-            'Staff clinic', 'Student clinic', 'CMO', 'Laboratory', 'SickBay', 
-            'ICEC', 'Gender Desk', 'Theatre', 'Accounts'
-        ]
-    },
-    'Confucius': {
-        '': [
-            'Block A', 'Block B', 'Block C'
-        ]
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.3);
+        transform: scale(0);
+        animation: ripple-animation 0.6s linear;
+        pointer-events: none;
     }
-};
-
-function updateSubunitOptions() {
-    const department = departmentFilter.value;
-    subunitFilter.innerHTML = '<option value="">Select Subunit</option>';
-    locationFilter.innerHTML = '<option value="">Select Location</option>';
     
-    if (department === 'SWA') {
-        subunitFilterGroup.style.display = '';
-        Object.keys(locationData['SWA']).forEach(subunit => {
-            const opt = document.createElement('option');
-            opt.value = subunit;
-            opt.text = subunit;
-            subunitFilter.appendChild(opt);
-        });
-        locationFilterGroup.style.display = 'none';
-    } else if (department === 'UHS' || department === 'Confucius') {
-        subunitFilterGroup.style.display = 'none';
-        locationFilterGroup.style.display = '';
-        let locations = locationData[department][''];
-        locations.forEach(loc => {
-            const opt = document.createElement('option');
-            opt.value = loc;
-            opt.text = loc;
-            locationFilter.appendChild(opt);
-        });
-    } else {
-        subunitFilterGroup.style.display = 'none';
-        locationFilterGroup.style.display = 'none';
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
     }
-}
-
-function updateLocationOptions() {
-    const department = departmentFilter.value;
-    const subunit = subunitFilter.value;
-    locationFilter.innerHTML = '<option value="">Select Location</option>';
-    
-    if (department === 'SWA' && subunit) {
-        locationFilterGroup.style.display = '';
-        let locations = locationData['SWA'][subunit] || [];
-        locations.forEach(loc => {
-            const opt = document.createElement('option');
-            opt.value = loc;
-            opt.text = loc;
-            locationFilter.appendChild(opt);
-        });
-    } else {
-        locationFilterGroup.style.display = 'none';
-    }
-}
-
-departmentFilter.addEventListener('change', updateSubunitOptions);
-subunitFilter.addEventListener('change', updateLocationOptions);
-
-// Initialize on page load
-updateSubunitOptions();
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}
