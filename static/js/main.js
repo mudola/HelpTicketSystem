@@ -101,8 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // New notification management system
-document.addEventListener('DOMContentLoaded', function() {
+    // Notification management system - moved to global scope
     const notificationsDropdown = document.getElementById('notificationsDropdown');
     const notificationsList = document.getElementById('notifications-list');
     const notificationBadge = document.getElementById('notification-badge');
@@ -242,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
     }
-});
 
     // Utility functions
 function formatFileSize(bytes) {

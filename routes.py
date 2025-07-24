@@ -294,7 +294,9 @@ def new_ticket():
         db.session.commit()
 
         # Send notifications using the new system
+        print(f"DEBUG: About to send notifications for new ticket {ticket.id}")
         NotificationManager.notify_new_ticket(ticket)
+        print(f"DEBUG: Notifications sent for ticket {ticket.id}")
 
         flash('Ticket created successfully', 'success')
         return redirect(url_for('ticket_detail', id=ticket.id))
@@ -1061,7 +1063,9 @@ def api_ticket_descriptions():
 @login_required
 def api_notifications():
     """Get notifications for current user"""
+    print(f"DEBUG: Loading notifications for user {current_user.id}")
     notifications = NotificationManager.get_user_notifications(current_user.id, limit=20)
+    print(f"DEBUG: Found {len(notifications)} notifications")
     
     notification_data = []
     for notification in notifications:
@@ -1083,6 +1087,7 @@ def api_notifications():
 def api_unread_count():
     """Get count of unread notifications"""
     count = NotificationManager.get_unread_count(current_user.id)
+    print(f"DEBUG: Unread count for user {current_user.id}: {count}")
     return jsonify({'count': count})
 
 @app.route('/api/notifications/<int:notification_id>/mark_read', methods=['POST'])

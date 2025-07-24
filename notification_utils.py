@@ -52,6 +52,7 @@ class NotificationManager:
                 )
                 db.session.add(notification)
                 logger.info(f"Created in-app notification for user {user_id}: {title}")
+                print(f"DEBUG: Created notification - User: {user_id}, Type: {notification_type}, Title: {title}")
             
             # Send email if enabled
             if email_enabled and send_email:
