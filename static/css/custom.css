@@ -719,6 +719,7 @@ body, html {
     border-radius: var(--radius-md);
     background: var(--surface);
     transition: all 0.2s ease;
+    color: var(--text-primary);
 }
 
 .login-input:focus {
@@ -1129,7 +1130,20 @@ body, html {
     }
 
     .stats-number {
-        font-size: 1.75rem;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .stats-label {
+        color: var(--text-secondary);
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
     }
 }
 
@@ -1530,27 +1544,6 @@ body, html {
 @keyframes spin {
     to {
         transform: rotate(360deg);
-    }
-}
-
-/* =====================
-   Print Styles
-   ===================== */
-@media print {
-    .navbar,
-    .footer-sky,
-    .btn,
-    .card-header {
-        display: none !important;
-    }
-
-    .card {
-        box-shadow: none;
-        border: 1px solid #ddd;
-    }
-
-    body {
-        background: white;
     }
 }
 
@@ -2445,5 +2438,72 @@ body, html {
         width: 100%;
         text-align: left;
         justify-content: flex-start;
+    }
+}
+
+/* Ticket Summary Table Styles */
+#ticket-summary-table {
+    font-size: 0.9rem;
+}
+
+#ticket-summary-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 600;
+}
+
+#ticket-summary-table td {
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem;
+}
+
+#ticket-summary-table .clickable-row:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+#ticket-summary-table .badge {
+    font-size: 0.75em;
+}
+
+#ticket-summary-table .text-truncate {
+    cursor: help;
+}
+
+.btn-group-vertical .btn {
+    border-radius: 0.25rem !important;
+    margin-bottom: 2px;
+}
+
+/* Print styles */
+@media print {
+    .btn, .navbar, .card-header .btn-group { 
+        display: none !important; 
+    }
+    .card { 
+        border: 1px solid #000 !important; 
+        margin-bottom: 20px; 
+        break-inside: avoid;
+    }
+    body { 
+        font-size: 12px; 
+    }
+    .stats-card:hover,
+    .clickable-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    #ticket-summary-table {
+        font-size: 10px;
+    }
+    #ticket-summary-table th,
+    #ticket-summary-table td {
+        padding: 4px;
+        border: 1px solid #000;
+    }
+    .badge {
+        background-color: #e9ecef !important;
+        color: #000 !important;
+        border: 1px solid #000;
     }
 }

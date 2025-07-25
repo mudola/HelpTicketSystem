@@ -308,52 +308,199 @@
     </div>
 </div>
 
-<!-- Recent Activity Table -->
+<!-- Ticket Summary Report Table -->
 <div class="row">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Ticket Activity</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Ticket Summary Report</h5>
+                <div class="btn-group">
+                    <button onclick="exportTableToCSV('ticket-summary-table', 'ticket_summary_report.csv')" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-download me-1"></i>Export CSV
+                    </button>
+                    <button onclick="window.print()" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                {% if recent_tickets %}
+                {% if tickets %}
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Showing {{ tickets|length }} tickets for the selected period ({{ start_date }} to {{ end_date }})
+                    </small>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table id="ticket-summary-table" class="table table-hover table-striped">
+                        <thead class="table-dark">
                             <tr>
-                                <th>ID</th>
-                                <th>Title</th>
-                                <th>Status</th>
-                                <th>Priority</th>
-                                <th>Created</th>
-                                <th>Last Updated</th>
-                                <th>Actions</th>
+                                <th style="width: 80px;">Ticket ID</th>
+                                <th style="width: 120px;">Date Created</th>
+                                <th style="width: 150px;">Department/Location</th>
+                                <th style="width: 120px;">Category</th>
+                                <th style="width: 100px;">Priority</th>
+                                <th style="width: 100px;">Status</th>
+                                <th style="width: 150px;">Technician(s)</th>
+                                <th style="width: 120px;">Time to Resolve</th>
+                                <th style="width: 200px;">Description</th>
+                                <th style="width: 80px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for ticket in recent_tickets %}
+                            {% for ticket in tickets %}
                             <tr class="clickable-row" onclick="window.location.href='{{ url_for('ticket_detail', id=ticket.id) }}'">
-                                <td>#{{ ticket.id }}</td>
-                                <td>{{ ticket.title or ticket.description[:50] + '...' if ticket.description|length > 50 else ticket.description }}</td>
-                                <td><span class="badge {{ ticket.status|status_badge }}">{{ ticket.status.replace('_', ' ').title() }}</span></td>
-                                <td><span class="badge {{ ticket.priority|priority_badge }}">{{ ticket.priority.title() }}</span></td>
-                                <td>{{ ticket.created_at|format_datetime }}</td>
-                                <td>{{ ticket.updated_at|format_datetime }}</td>
                                 <td>
-                                    <a href="{{ url_for('ticket_detail', id=ticket.id) }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation()">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
+                                    <strong>#{{ ticket.id }}</strong>
+                                </td>
+                                <td>
+                                    <small>{{ ticket.created_at.strftime('%Y-%m-%d') }}<br>{{ ticket.created_at.strftime('%H:%M') }}</small>
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 140px;" title="{{ ticket.location }}">
+                                        {{ ticket.location }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if ticket.category %}
+                                        <small class="badge bg-secondary">{{ ticket.category.name }}</small>
+                                    {% else %}
+                                        <small class="text-muted">No Category</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'urgent' %}bg-danger
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% else %}bg-success{% endif %}">
+                                        {{ ticket.priority.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.status == 'open' %}bg-warning
+                                        {% elif ticket.status == 'in_progress' %}bg-info
+                                        {% elif ticket.status == 'resolved' %}bg-success
+                                        {% elif ticket.status == 'closed' %}bg-secondary
+                                        {% else %}bg-light text-dark{% endif %}">
+                                        {{ ticket.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if ticket.assignees %}
+                                        {% for assignee in ticket.assignees %}
+                                            <small class="badge bg-primary me-1">{{ assignee.full_name }}</small>
+                                            {% if not loop.last %}<br>{% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <small class="text-muted">Unassigned</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ticket.status in ['resolved', 'closed'] and ticket.closed_at %}
+                                        {% set resolution_hours = ((ticket.closed_at - ticket.created_at).total_seconds() / 3600) | round(1) %}
+                                        {% if resolution_hours < 24 %}
+                                            <span class="text-success">{{ resolution_hours }}h</span>
+                                        {% elif resolution_hours < 48 %}
+                                            <span class="text-warning">{{ (resolution_hours / 24) | round(1) }}d</span>
+                                        {% else %}
+                                            <span class="text-danger">{{ (resolution_hours / 24) | round(1) }}d</span>
+                                        {% endif %}
+                                    {% elif ticket.due_date and ticket.status not in ['resolved', 'closed'] %}
+                                        {% set current_hours = ((now() - ticket.created_at).total_seconds() / 3600) | round(1) %}
+                                        {% if current_hours > 48 %}
+                                            <span class="text-danger">{{ (current_hours / 24) | round(1) }}d (Overdue)</span>
+                                        {% else %}
+                                            <span class="text-info">{{ current_hours }}h (In Progress)</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 180px;" title="{{ ticket.description }}">
+                                        {{ ticket.description[:100] + '...' if ticket.description|length > 100 else ticket.description }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group-vertical btn-group-sm">
+                                        <a href="{{ url_for('ticket_detail', id=ticket.id) }}" 
+                                           class="btn btn-outline-primary btn-sm" 
+                                           onclick="event.stopPropagation()" 
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if ticket.status == 'closed' %}
+                                        <a href="{{ url_for('print_ticket', id=ticket.id) }}" 
+                                           class="btn btn-outline-secondary btn-sm" 
+                                           onclick="event.stopPropagation()" 
+                                           title="Print Report" 
+                                           target="_blank">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Summary Statistics -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <div class="row text-center">
+                                <div class="col-md-2">
+                                    <strong>{{ tickets|length }}</strong><br>
+                                    <small>Total Tickets</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>{{ tickets|selectattr("status", "equalto", "resolved")|list|length + tickets|selectattr("status", "equalto", "closed")|list|length }}</strong><br>
+                                    <small>Resolved/Closed</small>
+                                </div>
+                                <div class="col-md-2">
+                                    {% set avg_resolution = [] %}
+                                    {% for ticket in tickets %}
+                                        {% if ticket.status in ['resolved', 'closed'] and ticket.closed_at %}
+                                            {% set _ = avg_resolution.append((ticket.closed_at - ticket.created_at).total_seconds() / 3600) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <strong>{{ (avg_resolution|sum / avg_resolution|length)|round(1) if avg_resolution else 0 }}h</strong><br>
+                                    <small>Avg Resolution</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>{{ tickets|selectattr("priority", "equalto", "urgent")|list|length }}</strong><br>
+                                    <small>Urgent Priority</small>
+                                </div>
+                                <div class="col-md-2">
+                                    {% set overdue_count = 0 %}
+                                    {% for ticket in tickets %}
+                                        {% if ticket.due_date and ticket.status not in ['resolved', 'closed'] and ticket.due_date < now() %}
+                                            {% set overdue_count = overdue_count + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <strong class="text-danger">{{ overdue_count }}</strong><br>
+                                    <small>Overdue</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>{{ tickets|selectattr("assignees")|list|length }}</strong><br>
+                                    <small>Assigned</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No recent activity</h5>
-                    <p class="text-muted">No tickets found for the selected criteria.</p>
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Tickets Found</h5>
+                    <p class="text-muted">No tickets match the selected criteria for the specified date range.</p>
+                    <a href="{{ url_for('reports') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-refresh me-2"></i>Reset Filters
+                    </a>
                 </div>
                 {% endif %}
             </div>
@@ -553,6 +700,41 @@
 </style>
 
 <script>
+// CSV Export Function
+function exportTableToCSV(tableId, filename) {
+    const table = document.getElementById(tableId);
+    const rows = table.querySelectorAll('tr');
+    let csvContent = '';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = [];
+        cells.forEach(cell => {
+            // Clean the cell content for CSV
+            let cellText = cell.innerText.trim();
+            // Remove action buttons from export
+            if (!cell.querySelector('.btn-group-vertical')) {
+                cellText = cellText.replace(/"/g, '""'); // Escape quotes
+                rowData.push('"' + cellText + '"');
+            }
+        });
+        if (rowData.length > 0) {
+            csvContent += rowData.join(',') + '\n';
+        }
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
 // Add click animations and interactions
 document.addEventListener('DOMContentLoaded', function() {
     // Add ripple effect to clickable cards

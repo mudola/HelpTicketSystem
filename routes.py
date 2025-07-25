@@ -889,6 +889,7 @@ def reports():
                          start_date=start_date.strftime('%Y-%m-%d'),
                          end_date=end_date.strftime('%Y-%m-%d'),
                          datetime=datetime,
+                         now=datetime.utcnow,
                          tickets=tickets,
                          all_users=all_users,
                          all_categories=all_categories,
