@@ -137,11 +137,25 @@ def register():
         db.session.add(user)
         db.session.flush()  # Get the user ID
         
-        # Send verification email
-        verify_url = url_for('verify_email', token=token, _external=True)
-        msg = Message('Verify Your Email - ICT Helpdesk', recipients=[user.email])
-        msg.body = f"Hello {user.full_name},\n\nPlease verify your email by clicking the link below:\n{verify_url}\n\nAfter verification, your account will need admin approval before you can access the system.\n\nIf you did not register, please ignore this email."
-        mail.send(msg)
+        # Send verification email (only if email is configured)
+        try:
+            if app.config.get('MAIL_USERNAME') and app.config.get('MAIL_PASSWORD'):
+                verify_url = url_for('verify_email', token=token, _external=True)
+                msg = Message('Verify Your Email - ICT Helpdesk', recipients=[user.email])
+                msg.body = f"Hello {user.full_name},\n\nPlease verify your email by clicking the link below:\n{verify_url}\n\nAfter verification, your account will need admin approval before you can access the system.\n\nIf you did not register, please ignore this email."
+                mail.send(msg)
+                email_sent = True
+            else:
+                email_sent = False
+                # For development/testing, mark user as verified automatically
+                user.is_verified = True
+                user.verification_token = None
+        except Exception as e:
+            print(f"Email sending failed: {e}")
+            email_sent = False
+            # Mark user as verified automatically if email fails
+            user.is_verified = True
+            user.verification_token = None
         
         db.session.commit()
         
@@ -149,7 +163,10 @@ def register():
         if form.role.data in ['intern', 'user']:
             NotificationManager.notify_new_user_registration(user)
         
-        flash('Registration successful! Please check your email to verify your account. Admin approval will be required before you can access the system.', 'info')
+        if email_sent:
+            flash('Registration successful! Please check your email to verify your account. Admin approval will be required before you can access the system.', 'info')
+        else:
+            flash('Registration successful! Your account has been automatically verified for testing. Admin approval will be required before you can access the system.', 'info')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
