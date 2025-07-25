@@ -568,11 +568,24 @@ def reports_pdf():
         abort(403)
 
     # Use same logic as main reports route for consistency
-    days = request.args.get('days', 30, type=int)
-    start_date = datetime.utcnow() - timedelta(days=days)
+    date_range = request.args.get('date_range', 'weekly')
     end_date = datetime.utcnow()
+    
+    # Calculate start date based on range
+    if date_range == 'daily':
+        start_date = end_date - timedelta(days=1)
+        days = 1
+    elif date_range == 'weekly':
+        start_date = end_date - timedelta(days=7)
+        days = 7
+    elif date_range == 'monthly':
+        start_date = end_date - timedelta(days=30)
+        days = 30
+    else:
+        start_date = end_date - timedelta(days=7)
+        days = 7
 
-    # Custom date range
+    # Custom date range overrides preset ranges
     custom_start = request.args.get('start_date')
     custom_end = request.args.get('end_date')
     if custom_start and custom_end:
@@ -670,12 +683,26 @@ def reports():
     if current_user.role != 'admin':
         abort(403)
 
-    # Enhanced filters
-    days = request.args.get('days', 30, type=int)
-    start_date = datetime.utcnow() - timedelta(days=days)
+    # Enhanced filters with new date range options
+    date_range = request.args.get('date_range', 'weekly')
     end_date = datetime.utcnow()
+    
+    # Calculate start date based on range
+    if date_range == 'daily':
+        start_date = end_date - timedelta(days=1)
+        days = 1
+    elif date_range == 'weekly':
+        start_date = end_date - timedelta(days=7)
+        days = 7
+    elif date_range == 'monthly':
+        start_date = end_date - timedelta(days=30)
+        days = 30
+    else:
+        # Default to weekly if invalid option
+        start_date = end_date - timedelta(days=7)
+        days = 7
 
-    # Custom date range
+    # Custom date range overrides preset ranges
     custom_start = request.args.get('start_date')
     custom_end = request.args.get('end_date')
     if custom_start and custom_end:
