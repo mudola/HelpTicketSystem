@@ -79,6 +79,123 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCounter();
     });
 
+    // Real-time notification system
+    let lastNotificationCheck = Date.now();
+    
+    function showNotificationPopup(notification) {
+        // Create notification container if it doesn't exist
+        let notificationContainer = document.getElementById('notification-container');
+        if (!notificationContainer) {
+            notificationContainer = document.createElement('div');
+            notificationContainer.id = 'notification-container';
+            notificationContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                max-width: 400px;
+            `;
+            document.body.appendChild(notificationContainer);
+        }
+
+        // Create notification popup
+        const popup = document.createElement('div');
+        popup.className = 'alert alert-info alert-dismissible fade show notification-popup';
+        popup.style.cssText = `
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-left: 4px solid #007bff;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        
+        const iconMap = {
+            'new_ticket': 'fas fa-ticket-alt',
+            'ticket_updated': 'fas fa-edit',
+            'new_comment': 'fas fa-comment',
+            'ticket_closed': 'fas fa-check-circle',
+            'ticket_overdue': 'fas fa-exclamation-triangle',
+            'user_registered': 'fas fa-user-plus'
+        };
+        
+        const icon = iconMap[notification.type] || 'fas fa-bell';
+        
+        popup.innerHTML = `
+            <div class="d-flex">
+                <div class="me-3">
+                    <i class="${icon} text-primary"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <strong>${notification.title}</strong>
+                    <div class="small text-muted mt-1">${notification.message}</div>
+                    ${notification.link ? `<a href="${notification.link}" class="btn btn-sm btn-outline-primary mt-2">View</a>` : ''}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        notificationContainer.appendChild(popup);
+        
+        // Auto-dismiss after 8 seconds
+        setTimeout(() => {
+            if (popup.parentNode) {
+                popup.remove();
+            }
+        }, 8000);
+        
+        // Play notification sound (optional)
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwfCCWA0fPTgjEGHm7A7+OZSA0PVqzn77BdGAg+ltryxnkpBi16yO/ejkELEGGx5+iwYBoGPJPY88p9KwUme8nt350+CRZiturqpVELDFCm4/K2YxwIOZPX8sx5LAUnd8fw3Y9ACRVeturqqVELDVOq5e+zYBoGOpTZ88p9KwUme8vt4Z0/CBVituzrp1ELDVGn5O+2YRsGOpXa88p6KgUme8zt4p4+CBZhtuvtqVILDFCn5e+2Yh0FO5Xa8sp6KwUme8vt4Z4+CBVitu3sp1ILDFGo5e6xYRsGOpTa88p7KgUmfMzt4p4+CBVhtuvtqVILDFCn5e+2Yh0GO5bZ88p6LAUmfszt4p8+CFVivO3tp1ELDVGn5O+2YRwFOpXY88p7KgYmfMzs4p4/CBVhuuvrqVILDFGo5O62YRwGO5fZ88p6LAUmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+CFVhu+vtqVILDFCp5O62YRwGO5fZ88p6LAYmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+CFVhu+vtqVILDFCp5O62YRwGO5fZ88p6LAYmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+CFVhu+vtqVILDFCp5O62YRwGO5fZ88p6LAYmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+');
+            audio.volume = 0.3;
+            audio.play().catch(() => {}); // Ignore audio errors
+        } catch (e) {}
+    }
+    
+    function checkForNewNotifications() {
+        if (!document.hidden) {
+            fetch('/api/notifications/recent?since=' + lastNotificationCheck)
+                .then(response => response.json())
+                .then(notifications => {
+                    notifications.forEach(notification => {
+                        showNotificationPopup(notification);
+                    });
+                    lastNotificationCheck = Date.now();
+                })
+                .catch(error => console.log('Notification check failed:', error));
+        }
+    }
+    
+    // Check for new notifications every 5 seconds
+    setInterval(checkForNewNotifications, 5000);
+    
+    // Add CSS animation for notification popup
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification-popup {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @media (max-width: 768px) {
+            #notification-container {
+                left: 10px !important;
+                right: 10px !important;
+                top: 10px !important;
+                max-width: none !important;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
     // Auto-refresh ticket status (every 30 seconds)
     if (window.location.pathname.includes('/ticket/')) {
         setInterval(function() {

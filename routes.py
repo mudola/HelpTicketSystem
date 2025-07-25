@@ -117,25 +117,39 @@ def register():
 
         # Generate verification token
         token = str(uuid.uuid4())
+        
+        # New users require admin approval (except admins)
+        is_approved = form.role.data == 'admin'
+        is_active = form.role.data == 'admin'
+        
         user = User(
             username=form.username.data,
             email=form.email.data,
             full_name=form.full_name.data,
             password_hash=generate_password_hash(form.password.data),
             role=form.role.data,
+            phone_number=getattr(form, 'phone_number', None) and form.phone_number.data,
             is_verified=False,
+            is_approved=is_approved,
+            is_active=is_active,
             verification_token=token
         )
         db.session.add(user)
-        db.session.commit()
-
+        db.session.flush()  # Get the user ID
+        
         # Send verification email
         verify_url = url_for('verify_email', token=token, _external=True)
         msg = Message('Verify Your Email - ICT Helpdesk', recipients=[user.email])
-        msg.body = f"Hello {user.full_name},\n\nPlease verify your email by clicking the link below:\n{verify_url}\n\nIf you did not register, please ignore this email."
+        msg.body = f"Hello {user.full_name},\n\nPlease verify your email by clicking the link below:\n{verify_url}\n\nAfter verification, your account will need admin approval before you can access the system.\n\nIf you did not register, please ignore this email."
         mail.send(msg)
-
-        flash('Registration successful! Please check your email to verify your account.', 'info')
+        
+        db.session.commit()
+        
+        # Notify all admins about new registration
+        if form.role.data in ['intern', 'user']:
+            NotificationManager.notify_new_user_registration(user)
+        
+        flash('Registration successful! Please check your email to verify your account. Admin approval will be required before you can access the system.', 'info')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
@@ -1137,6 +1151,35 @@ def api_mark_all_read():
     count = NotificationManager.mark_all_as_read(current_user.id)
     return jsonify({'success': True, 'marked_count': count})
 
+@app.route('/api/notifications/recent')
+@login_required
+def api_recent_notifications():
+    """Get recent notifications since timestamp for real-time updates"""
+    since_timestamp = request.args.get('since', type=int)
+    if since_timestamp:
+        since_datetime = datetime.fromtimestamp(since_timestamp / 1000)
+        notifications = Notification.query.filter(
+            Notification.user_id == current_user.id,
+            Notification.created_at > since_datetime
+        ).order_by(Notification.created_at.desc()).limit(10).all()
+    else:
+        notifications = []
+    
+    notification_data = []
+    for notification in notifications:
+        notification_data.append({
+            'id': notification.id,
+            'type': notification.type,
+            'title': notification.title,
+            'message': notification.message,
+            'is_read': notification.is_read,
+            'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M'),
+            'ticket_id': notification.ticket_id,
+            'link': url_for('ticket_detail', id=notification.ticket_id) if notification.ticket_id else None
+        })
+    
+    return jsonify(notification_data)
+
 
 @app.route('/analytics')
 @login_required
@@ -1274,3 +1317,44 @@ def toggle_user_status(user_id):
     db.session.commit()
     flash(f'User {user.full_name} has been {status_text}', 'success')
     return redirect(url_for('user_management'))
+
+@app.route('/admin/users/<int:user_id>/approve', methods=['POST'])
+@login_required
+def approve_user(user_id):
+    """Admin route to approve new user registrations"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    user = User.query.get_or_404(user_id)
+    
+    if user.is_approved:
+        flash(f'{user.full_name} is already approved', 'info')
+        return redirect(url_for('user_management'))
+    
+    # Approve the user
+    user.is_approved = True
+    user.is_active = True
+    user.approved_by_id = current_user.id
+    user.approved_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    # Send welcome notification to the approved user
+    NotificationManager.notify_user_approved(user, current_user)
+    
+    flash(f'{user.full_name} has been approved and activated', 'success')
+    return redirect(url_for('user_management'))
+
+@app.route('/admin/pending_users')
+@login_required
+def pending_users():
+    """Show pending user approvals"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    pending_users = User.query.filter_by(
+        is_approved=False,
+        is_verified=True
+    ).order_by(User.created_at.desc()).all()
+    
+    return render_template('pending_users.html', pending_users=pending_users)

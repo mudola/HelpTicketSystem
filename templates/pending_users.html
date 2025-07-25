@@ -1,0 +1,87 @@
+
+{% extends "base.html" %}
+
+{% block title %}Pending User Approvals - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-clock me-2"></i>Pending User Approvals</h2>
+    <a href="{{ url_for('user_management') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to User Management
+    </a>
+</div>
+
+{% if pending_users %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in pending_users %}
+                    <tr>
+                        <td>
+                            <strong>{{ user.full_name }}</strong>
+                            {% if not user.is_verified %}
+                                <span class="badge bg-warning ms-2">Email Not Verified</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone_number or 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ user.role.title() }}</span>
+                        </td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if user.is_verified %}
+                                <form method="POST" action="{{ url_for('approve_user', user_id=user.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm" 
+                                            onclick="return confirm('Approve {{ user.full_name }} and activate their account?')">
+                                        <i class="fas fa-check me-1"></i>Approve
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm ms-1" 
+                                            onclick="return confirm('Reject and delete {{ user.full_name }}?')">
+                                        <i class="fas fa-times me-1"></i>Reject
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted">Waiting for email verification</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center">
+        <i class="fas fa-check-circle text-success mb-3" style="font-size: 3rem;"></i>
+        <h4>No Pending Approvals</h4>
+        <p class="text-muted">All registered users have been approved or are awaiting email verification.</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Auto-refresh every 30 seconds
+setTimeout(function() {
+    window.location.reload();
+}, 30000);
+</script>
+{% endblock %}

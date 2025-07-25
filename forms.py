@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, PasswordField, SubmitField, BooleanField, IntegerField, SelectMultipleField
+from wtforms import StringField, TextAreaField, SelectField, PasswordField, BooleanField, IntegerField, SelectMultipleField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, Regexp, NumberRange
 from models import User, Category
 
@@ -22,6 +22,10 @@ class RegistrationForm(FlaskForm):
     ])
     email = StringField('Email', validators=[DataRequired(), Email()])
     full_name = StringField('Full Name', validators=[DataRequired(), Length(max=100)])
+    phone_number = StringField('Phone Number', validators=[
+        Optional(),
+        Regexp(r'^[\+]?[1-9][\d]{0,15}$', message='Please enter a valid phone number')
+    ])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Role', choices=[('user', 'User'), ('intern', 'Intern')], default='user')
@@ -89,7 +93,7 @@ class TicketUpdateForm(FlaskForm):
     def __init__(self, user_role=None, current_status=None, *args, **kwargs):
         super(TicketUpdateForm, self).__init__(*args, **kwargs)
         self.assignees.choices = [(u.id, u.full_name) for u in User.query.filter(User.role.in_(['admin', 'intern'])).all()]
-        
+
         # Restrict status choices for interns
         if user_role == 'intern':
             if current_status == 'resolved':

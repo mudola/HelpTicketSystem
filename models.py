@@ -14,6 +14,10 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False)
     verification_token = db.Column(db.String(128), nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    is_approved = db.Column(db.Boolean, default=False)
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     tickets_created = db.relationship('Ticket', foreign_keys='Ticket.created_by_id', backref='creator', lazy='dynamic')

@@ -87,32 +87,96 @@ class NotificationManager:
             
             ticket_link = url_for('ticket_detail', id=ticket_id, _external=True) if ticket_id else ""
             
+            # Enhanced email template with better styling
             email_body = f"""
             <html>
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
+                    .content {{ background: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; }}
+                    .footer {{ background: #6c757d; color: white; padding: 10px 20px; text-align: center; font-size: 12px; border-radius: 0 0 5px 5px; }}
+                    .btn {{ background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }}
+                    .priority-urgent {{ color: #dc3545; font-weight: bold; }}
+                    .priority-high {{ color: #fd7e14; font-weight: bold; }}
+                    .priority-medium {{ color: #ffc107; font-weight: bold; }}
+                    .priority-low {{ color: #28a745; font-weight: bold; }}
+                </style>
+            </head>
             <body>
-                <h2>{title}</h2>
-                <p>{message}</p>
-                {f'<p><strong>Ticket ID:</strong> #{ticket.id}</p>' if ticket else ''}
-                {f'<p><strong>Status:</strong> {ticket.status.title()}</p>' if ticket else ''}
-                {f'<p><strong>Priority:</strong> {ticket.priority.title()}</p>' if ticket else ''}
-                {f'<p><a href="{ticket_link}" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">View Ticket</a></p>' if ticket_link else ''}
-                <br>
-                <p><small>ICT Helpdesk System</small></p>
+                <div class="container">
+                    <div class="header">
+                        <h2>🎫 ICT Helpdesk Notification</h2>
+                    </div>
+                    <div class="content">
+                        <h3>{title}</h3>
+                        <p>{message}</p>
+                        {f'<p><strong>Ticket ID:</strong> #{ticket.id}</p>' if ticket else ''}
+                        {f'<p><strong>Location:</strong> {ticket.location}</p>' if ticket else ''}
+                        {f'<p><strong>Status:</strong> {ticket.status.replace("_", " ").title()}</p>' if ticket else ''}
+                        {f'<p><strong>Priority:</strong> <span class="priority-{ticket.priority.lower()}">{ticket.priority.title()}</span></p>' if ticket else ''}
+                        {f'<p><strong>Created:</strong> {ticket.created_at.strftime("%Y-%m-%d %H:%M")}</p>' if ticket else ''}
+                        {f'<a href="{ticket_link}" class="btn">📋 View Ticket Details</a>' if ticket_link else ''}
+                    </div>
+                    <div class="footer">
+                        <p>ICT Helpdesk System - Automated Notification</p>
+                        <p>Please do not reply to this email. Use the helpdesk system for all communications.</p>
+                    </div>
+                </div>
             </body>
             </html>
             """
             
             msg = Message(
-                subject=f"ICT Helpdesk - {title}",
+                subject=f"🎫 ICT Helpdesk - {title}",
                 recipients=[user.email],
                 html=email_body
             )
             
             mail.send(msg)
+            
+            # Also try to send SMS if phone number is available
+            NotificationManager.send_sms_notification(user, title, message)
+            
             return True
             
         except Exception as e:
             logger.error(f"Error sending email notification: {e}")
+            return False
+    
+    @staticmethod
+    def send_sms_notification(user, title, message):
+        """Send SMS notification (placeholder for SMS service integration)"""
+        try:
+            # This is a placeholder - you would integrate with an SMS service like Twilio, Africa's Talking, etc.
+            phone_number = getattr(user, 'phone_number', None)
+            
+            if not phone_number:
+                logger.info(f"No phone number for user {user.id}, skipping SMS")
+                return False
+            
+            # Example SMS message format
+            sms_message = f"ICT Helpdesk: {title[:50]}{'...' if len(title) > 50 else ''}"
+            
+            # TODO: Integrate with SMS service provider
+            # For now, just log the SMS attempt
+            logger.info(f"SMS would be sent to {phone_number}: {sms_message}")
+            
+            # Uncomment and configure when SMS service is available:
+            # import requests
+            # sms_api_url = "YOUR_SMS_PROVIDER_API_URL"
+            # response = requests.post(sms_api_url, {
+            #     'to': phone_number,
+            #     'message': sms_message,
+            #     'api_key': 'YOUR_SMS_API_KEY'
+            # })
+            # return response.status_code == 200
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending SMS notification: {e}")
             return False
     
     @staticmethod
@@ -270,3 +334,29 @@ class NotificationManager:
     def get_unread_count(user_id):
         """Get count of unread notifications for a user"""
         return Notification.query.filter_by(user_id=user_id, is_read=False).count()
+    
+    @staticmethod
+    def notify_new_user_registration(user):
+        """Send notifications to admins about new user registration"""
+        from models import User
+        
+        admins = User.query.filter_by(role='admin', is_active=True).all()
+        for admin in admins:
+            NotificationManager.create_notification(
+                user_id=admin.id,
+                ticket_id=None,
+                notification_type='user_registered',
+                title=f'New User Registration: {user.full_name}',
+                message=f'A new {user.role} has registered and needs approval.\n\nName: {user.full_name}\nEmail: {user.email}\nUsername: {user.username}\nRole: {user.role.title()}\n\nPlease review and approve their account in the user management section.'
+            )
+    
+    @staticmethod
+    def notify_user_approved(user, approved_by):
+        """Send notification to user when their account is approved"""
+        NotificationManager.create_notification(
+            user_id=user.id,
+            ticket_id=None,
+            notification_type='account_approved',
+            title='Account Approved - Welcome to ICT Helpdesk!',
+            message=f'Your account has been approved by {approved_by.full_name}.\n\nYou can now access the ICT Helpdesk system and start working with tickets.\n\nWelcome to the team!'
+        )
