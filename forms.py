@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm # type: ignore
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, PasswordField, BooleanField, IntegerField, SelectMultipleField
+from wtforms import StringField, TextAreaField, SelectField, PasswordField, BooleanField, IntegerField, SelectMultipleField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, Regexp, NumberRange
 from models import User, Category
 
