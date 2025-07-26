@@ -69,6 +69,17 @@ def login():
                 if not user.is_active:
                     flash('Your account has been deactivated. Please contact administrator.', 'danger')
                     return redirect(url_for('index'))
+                
+                # Check if account is verified
+                if not user.is_verified:
+                    flash('Please verify your email address before logging in.', 'warning')
+                    return redirect(url_for('index'))
+                
+                # Check approval status for interns only
+                if user.role == 'intern' and not user.is_approved:
+                    flash('Your intern account is pending admin approval. Please wait for activation.', 'warning')
+                    return redirect(url_for('index'))
+                
                 login_user(user, remember=remember_me)
                 next_page = request.args.get('next')
                 if not next_page or not next_page.startswith('/'):
@@ -118,9 +129,9 @@ def register():
         # Generate verification token
         token = str(uuid.uuid4())
         
-        # New users require admin approval (except admins)
-        is_approved = form.role.data == 'admin'
-        is_active = form.role.data == 'admin'
+        # Auto-approve users, require admin approval only for interns (except admins)
+        is_approved = form.role.data in ['admin', 'user']
+        is_active = form.role.data in ['admin', 'user']
         
         user = User(
             username=form.username.data,
@@ -159,14 +170,20 @@ def register():
         
         db.session.commit()
         
-        # Notify all admins about new registration
-        if form.role.data in ['intern', 'user']:
+        # Notify all admins about new intern registration (users are auto-approved)
+        if form.role.data == 'intern':
             NotificationManager.notify_new_user_registration(user)
         
-        if email_sent:
-            flash('Registration successful! Please check your email to verify your account. Admin approval will be required before you can access the system.', 'info')
-        else:
-            flash('Registration successful! Your account has been automatically verified for testing. Admin approval will be required before you can access the system.', 'info')
+        if form.role.data == 'user':
+            if email_sent:
+                flash('Registration successful! Please check your email to verify your account, then you can login.', 'info')
+            else:
+                flash('Registration successful! Your account has been automatically verified. You can now login.', 'info')
+        else:  # intern
+            if email_sent:
+                flash('Registration successful! Please check your email to verify your account. Admin approval will be required before you can access the system.', 'info')
+            else:
+                flash('Registration successful! Your account has been automatically verified for testing. Admin approval will be required before you can access the system.', 'info')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
@@ -1371,7 +1388,8 @@ def pending_users():
     
     pending_users = User.query.filter_by(
         is_approved=False,
-        is_verified=True
+        is_verified=True,
+        role='intern'
     ).order_by(User.created_at.desc()).all()
     
     return render_template('pending_users.html', pending_users=pending_users)
