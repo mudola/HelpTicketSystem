@@ -227,11 +227,20 @@ def admin_dashboard():
         role='intern'
     ).count()
 
+    # Get categories for dashboard display
+    categories = Category.query.order_by(Category.name).all()
+    
+    # Import CategoryForm for the modal
+    from forms import CategoryForm
+    category_form = CategoryForm()
+
     return render_template('admin_dashboard.html', 
                          stats=stats, 
                          recent_tickets=recent_tickets, 
                          user_stats=user_stats,
-                         pending_interns_count=pending_interns_count)
+                         pending_interns_count=pending_interns_count,
+                         categories=categories,
+                         category_form=category_form)
 
 @app.route('/tickets')
 @login_required
@@ -974,13 +983,10 @@ def user_management():
     users = User.query.all()
     form = UserManagementForm()
     admin_user_form = AdminUserForm()
-    category_form = CategoryForm()
     status_form = UserStatusForm()
-    categories = Category.query.all()
 
     return render_template('user_management.html', users=users, form=form, 
-                         admin_user_form=admin_user_form, category_form=category_form, 
-                         status_form=status_form, categories=categories)
+                         admin_user_form=admin_user_form, status_form=status_form)
 
 @app.route('/admin/users/update_password', methods=['POST'])
 @login_required
