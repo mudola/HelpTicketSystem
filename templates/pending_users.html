@@ -43,23 +43,13 @@
                         </td>
                         <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>
-                            {% if user.is_verified %}
-                                <form method="POST" action="{{ url_for('approve_user', user_id=user.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-success btn-sm" 
-                                            onclick="return confirm('Approve {{ user.full_name }} and activate their account?')">
-                                        <i class="fas fa-check me-1"></i>Approve
-                                    </button>
-                                </form>
-                                <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-danger btn-sm ms-1" 
-                                            onclick="return confirm('Reject and delete {{ user.full_name }}?')">
-                                        <i class="fas fa-times me-1"></i>Reject
-                                    </button>
-                                </form>
-                            {% else %}
-                                <span class="text-muted">Waiting for email verification</span>
-                            {% endif %}
-                        </td>
+                                    <form method="POST" action="{{ url_for('approve_user_account', user_id=user.id) }}" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve {{ user.full_name }}?')">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                </td>
                     </tr>
                     {% endfor %}
                 </tbody>

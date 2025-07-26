@@ -77,8 +77,11 @@ def login():
                 
                 # Check approval status for interns only
                 if user.role == 'intern' and not user.is_approved:
+                    print(f"DEBUG: Intern {user.username} is not approved. is_approved={user.is_approved}, is_active={user.is_active}")
                     flash('Your intern account is pending admin approval. Please wait for activation.', 'warning')
                     return redirect(url_for('index'))
+                
+                print(f"DEBUG: User {user.username} login - role={user.role}, is_approved={user.is_approved}, is_active={user.is_active}")
                 
                 login_user(user, remember=remember_me)
                 next_page = request.args.get('next')
@@ -129,7 +132,7 @@ def register():
         # Generate verification token
         token = str(uuid.uuid4())
         
-        # Auto-approve users, require admin approval only for interns (except admins)
+        # Auto-approve users, require admin approval only for interns
         is_approved = form.role.data in ['admin', 'user']
         is_active = form.role.data in ['admin', 'user']
         
