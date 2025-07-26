@@ -117,7 +117,7 @@
                         <td>
                             <div class="btn-group" role="group">
                                 <form method="POST" action="{{ url_for('approve_user_account', user_id=intern.id) }}" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    {{ csrf_token() }}
                                     <button type="submit" class="btn btn-success btn-sm" 
                                             onclick="return confirm('Approve {{ intern.full_name }} as an intern?')"
                                             title="Approve Intern">
@@ -176,7 +176,7 @@
                         <td>
                             <div class="btn-group" role="group">
                                 <form method="POST" action="{{ url_for('toggle_user_status', user_id=intern.id) }}" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    {{ csrf_token() }}
                                     <button type="submit" class="btn btn-warning btn-sm" 
                                             onclick="return confirm('Deactivate {{ intern.full_name }}?')"
                                             title="Deactivate Intern">
@@ -228,7 +228,7 @@
                         <td>{{ intern.created_at.strftime('%Y-%m-%d') }}</td>
                         <td>
                             <form method="POST" action="{{ url_for('toggle_user_status', user_id=intern.id) }}" style="display: inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                {{ csrf_token() }}
                                 <button type="submit" class="btn btn-success btn-sm" 
                                         onclick="return confirm('Reactivate {{ intern.full_name }}?')"
                                         title="Reactivate Intern">
@@ -291,7 +291,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('update_user_password') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {{ csrf_token() }}
                 <div class="modal-body">
                     <p>Update password for: <strong id="userName"></strong></p>
                     <input type="hidden" name="user_id" id="userId">
