@@ -1,9 +1,18 @@
-
 {% extends "base.html" %}
 
 {% block title %}Admin Dashboard - ICT Helpdesk{% endblock %}
 
 {% block content %}
+<!-- Pending Approvals Alert -->
+{% if pending_interns_count > 0 %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>{{ pending_interns_count }}</strong> intern{{ 's' if pending_interns_count != 1 else '' }} waiting for approval.
+    <a href="{{ url_for('pending_users') }}" class="alert-link">Review now</a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
 <!-- Enhanced Header with Gradient Background -->
 <div class="admin-header mb-4">
     <div class="d-flex justify-content-between align-items-center">
@@ -87,7 +96,7 @@
             </div>
         </a>
     </div>
-    
+
     <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
         <a href="{{ url_for('tickets_list', status='open') }}" class="text-decoration-none">
             <div class="stats-card card-warning clickable-card" data-aos="fade-up" data-aos-delay="200">
@@ -106,7 +115,7 @@
             </div>
         </a>
     </div>
-    
+
     <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
         <a href="{{ url_for('tickets_list', status='in_progress') }}" class="text-decoration-none">
             <div class="stats-card card-info clickable-card" data-aos="fade-up" data-aos-delay="300">
@@ -125,7 +134,7 @@
             </div>
         </a>
     </div>
-    
+
     <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-3">
         <a href="{{ url_for('tickets_list', status='closed') }}" class="text-decoration-none">
             <div class="stats-card card-success clickable-card" data-aos="fade-up" data-aos-delay="400">
@@ -180,7 +189,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4">
         <div class="card priority-alerts">
             <div class="card-header">
@@ -244,7 +253,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card system-health">
             <div class="card-header">
@@ -284,6 +293,17 @@
         </div>
     </div>
 </div>
+<div class="btn-group" role="group">
+                        <a href="{{ url_for('intern_management') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-user-graduate me-2"></i>Intern Management
+                        </a>
+                        <a href="{{ url_for('staff_management') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-tie me-2"></i>Staff Management
+                        </a>
+                        <a href="{{ url_for('user_management') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-users me-2"></i>All Users
+                        </a>
+                    </div>
 
 <style>
 /* Admin Dashboard Custom Styles */
@@ -604,11 +624,11 @@
     .stats-card .card-body {
         padding: 1.25rem;
     }
-    
+
     .stats-number {
         font-size: 1.75rem;
     }
-    
+
     .stats-icon {
         font-size: 2rem;
     }
@@ -619,7 +639,7 @@
         flex-direction: column;
         gap: 0.5rem;
     }
-    
+
     .btn-group {
         width: 100%;
     }
@@ -629,36 +649,37 @@
     .admin-header {
         padding: 1.5rem;
     }
-    
+
     .admin-title {
         font-size: 1.5rem;
     }
-    
+
     .admin-actions {
         margin-top: 1rem;
+        width: 100%;
     }
-    
+
     .btn-group {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
     }
-    
+
     .stats-card .card-body {
         padding: 1rem;
         text-align: center;
     }
-    
+
     .stats-icon {
         font-size: 1.75rem;
         margin-right: 0;
         margin-bottom: 0.5rem;
     }
-    
+
     .stats-number {
         font-size: 1.5rem;
     }
-    
+
     .stats-label {
         font-size: 0.8rem;
     }
@@ -670,22 +691,22 @@
         text-align: center;
         padding: 0.75rem;
     }
-    
+
     .stats-icon {
         display: block;
         margin: 0 auto 0.5rem;
         font-size: 1.5rem;
     }
-    
+
     .stats-number {
         font-size: 1.25rem;
     }
-    
+
     .admin-header .d-flex {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .admin-actions {
         margin-top: 1rem;
         width: 100%;

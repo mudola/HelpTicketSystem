@@ -1,0 +1,331 @@
+
+{% extends "base.html" %}
+
+{% block title %}Intern Management - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-graduate me-2"></i>Intern Management</h2>
+    <div>
+        <a href="{{ url_for('staff_management') }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-users me-2"></i>Staff Management
+        </a>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Pending Approval</h6>
+                        <h3 class="mb-0">{{ pending_interns|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Active Interns</h6>
+                        <h3 class="mb-0">{{ active_interns|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Inactive Interns</h6>
+                        <h3 class="mb-0">{{ inactive_interns|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-times fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Interns</h6>
+                        <h3 class="mb-0">{{ (pending_interns|length + active_interns|length + inactive_interns|length) }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Approvals -->
+{% if pending_interns %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Pending Intern Approvals</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Registration Date</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for intern in pending_interns %}
+                    <tr>
+                        <td>{{ intern.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><strong>{{ intern.username }}</strong></td>
+                        <td>{{ intern.full_name }}</td>
+                        <td>{{ intern.email }}</td>
+                        <td>{{ intern.phone_number or 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-warning">Pending Approval</span>
+                            {% if intern.is_verified %}
+                                <span class="badge bg-success">Email Verified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <form method="POST" action="{{ url_for('approve_user_account', user_id=intern.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm" 
+                                            onclick="return confirm('Approve {{ intern.full_name }} as an intern?')"
+                                            title="Approve Intern">
+                                        <i class="fas fa-check me-1"></i>Approve
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-info btn-sm" 
+                                        onclick="showInternDetails({{ intern.id }}, '{{ intern.full_name }}', '{{ intern.email }}', '{{ intern.username }}', '{{ intern.phone_number or '' }}', '{{ intern.created_at.strftime('%Y-%m-%d %H:%M') }}')"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Interns -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-user-check me-2"></i>Active Interns</h5>
+    </div>
+    <div class="card-body">
+        {% if active_interns %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Approved Date</th>
+                        <th>Performance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in intern_stats %}
+                    {% set intern = stat.intern %}
+                    <tr>
+                        <td><strong>{{ intern.username }}</strong></td>
+                        <td>{{ intern.full_name }}</td>
+                        <td>{{ intern.email }}</td>
+                        <td>{{ intern.approved_at.strftime('%Y-%m-%d') if intern.approved_at else 'N/A' }}</td>
+                        <td>
+                            <small class="text-muted">
+                                Active: <span class="badge bg-primary">{{ stat.active_tickets }}</span>
+                                Completed: <span class="badge bg-success">{{ stat.completed_tickets }}</span>
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <form method="POST" action="{{ url_for('toggle_user_status', user_id=intern.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-warning btn-sm" 
+                                            onclick="return confirm('Deactivate {{ intern.full_name }}?')"
+                                            title="Deactivate Intern">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-outline-warning btn-sm" 
+                                        onclick="showPasswordModal({{ intern.id }}, '{{ intern.full_name }}')" 
+                                        title="Change Password">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">No active interns at the moment.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Inactive Interns -->
+{% if inactive_interns %}
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-times me-2"></i>Inactive Interns</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Deactivated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for intern in inactive_interns %}
+                    <tr class="table-secondary">
+                        <td><strong>{{ intern.username }}</strong></td>
+                        <td>{{ intern.full_name }}</td>
+                        <td>{{ intern.email }}</td>
+                        <td>{{ intern.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('toggle_user_status', user_id=intern.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-success btn-sm" 
+                                        onclick="return confirm('Reactivate {{ intern.full_name }}?')"
+                                        title="Reactivate Intern">
+                                    <i class="fas fa-check me-1"></i>Reactivate
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Intern Details Modal -->
+<div class="modal fade" id="internDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Intern Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-4"><strong>Full Name:</strong></div>
+                    <div class="col-sm-8" id="internFullName"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Username:</strong></div>
+                    <div class="col-sm-8" id="internUsername"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Email:</strong></div>
+                    <div class="col-sm-8" id="internEmail"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Phone:</strong></div>
+                    <div class="col-sm-8" id="internPhone"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Registered:</strong></div>
+                    <div class="col-sm-8" id="internRegistered"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Update Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Intern Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_user_password') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <p>Update password for: <strong id="userName"></strong></p>
+                    <input type="hidden" name="user_id" id="userId">
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" id="newPassword" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="confirmPassword" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showInternDetails(id, fullName, email, username, phone, registered) {
+    document.getElementById('internFullName').textContent = fullName;
+    document.getElementById('internUsername').textContent = username;
+    document.getElementById('internEmail').textContent = email;
+    document.getElementById('internPhone').textContent = phone || 'N/A';
+    document.getElementById('internRegistered').textContent = registered;
+    new bootstrap.Modal(document.getElementById('internDetailsModal')).show();
+}
+
+function showPasswordModal(userId, userName) {
+    document.getElementById('userId').value = userId;
+    document.getElementById('userName').textContent = userName;
+    new bootstrap.Modal(document.getElementById('passwordModal')).show();
+}
+</script>
+{% endblock %}

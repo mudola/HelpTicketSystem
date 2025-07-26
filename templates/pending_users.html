@@ -1,55 +1,76 @@
 {% extends "base.html" %}
 
-{% block title %}Pending User Approvals - ICT Helpdesk{% endblock %}
+{% block title %}Pending Intern Approvals - ICT Helpdesk{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-user-clock me-2"></i>Pending User Approvals</h2>
-    <a href="{{ url_for('user_management') }}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left me-2"></i>Back to User Management
-    </a>
+    <h2><i class="fas fa-user-graduate me-2"></i>Pending Intern Approvals</h2>
+    <div>
+        <a href="{{ url_for('intern_management') }}" class="btn btn-outline-warning me-2">
+            <i class="fas fa-users me-2"></i>Intern Management
+        </a>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
 </div>
 
-{% if pending_users %}
+{% if pending_interns %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>{{ pending_interns|length }}</strong> intern{{ 's' if pending_interns|length != 1 else '' }} waiting for approval.
+</div>
+
 <div class="card">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">Interns Awaiting Approval</h5>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Registration Date</th>
                         <th>Username</th>
+                        <th>Full Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Role</th>
-                        <th>Registered</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in pending_users %}
+                    {% for intern in pending_interns %}
                     <tr>
+                        <td>{{ intern.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><code>{{ intern.username }}</code></td>
+                        <td>{{ intern.full_name }}</td>
+                        <td>{{ intern.email }}</td>
+                        <td>{{ intern.phone_number or 'N/A' }}</td>
                         <td>
-                            <strong>{{ user.full_name }}</strong>
-                            {% if not user.is_verified %}
-                                <span class="badge bg-warning ms-2">Email Not Verified</span>
+                            <span class="badge bg-warning">Pending Approval</span>
+                            {% if intern.is_verified %}
+                                <span class="badge bg-success">Verified</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Unverified</span>
                             {% endif %}
                         </td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.phone_number or 'N/A' }}</td>
                         <td>
-                            <span class="badge bg-info">{{ user.role.title() }}</span>
+                            <div class="btn-group">
+                                <form method="POST" action="{{ url_for('approve_user_account', user_id=intern.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm" 
+                                            onclick="return confirm('Approve {{ intern.full_name }} as an intern?')"
+                                            title="Approve Intern">
+                                        <i class="fas fa-check me-1"></i>Approve
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-info btn-sm" 
+                                        onclick="showDetails('{{ intern.full_name }}', '{{ intern.email }}', '{{ intern.username }}', '{{ intern.phone_number or 'N/A' }}', '{{ intern.created_at.strftime('%Y-%m-%d %H:%M') }}')"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </td>
-                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td>
-                                    <form method="POST" action="{{ url_for('approve_user_account', user_id=user.id) }}" style="display: inline;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve {{ user.full_name }}?')">
-                                            <i class="fas fa-check"></i> Approve
-                                        </button>
-                                    </form>
-                                </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -57,20 +78,97 @@
         </div>
     </div>
 </div>
-{% else %}
-<div class="card">
-    <div class="card-body text-center">
-        <i class="fas fa-check-circle text-success mb-3" style="font-size: 3rem;"></i>
-        <h4>No Pending Approvals</h4>
-        <p class="text-muted">All registered users have been approved or are awaiting email verification.</p>
+
+{% if approved_interns %}
+<div class="card mt-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Recently Approved Interns</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Approved Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for intern in approved_interns %}
+                    <tr>
+                        <td><code>{{ intern.username }}</code></td>
+                        <td>{{ intern.full_name }}</td>
+                        <td>{{ intern.approved_at.strftime('%Y-%m-%d') if intern.approved_at else 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if intern.is_active else 'secondary' }}">
+                                {{ 'Active' if intern.is_active else 'Inactive' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endif %}
 
+{% else %}
+<div class="alert alert-success">
+    <i class="fas fa-check-circle me-2"></i>
+    No interns are currently pending approval. All intern applications have been processed.
+</div>
+{% endif %}
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Intern Application Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-4"><strong>Full Name:</strong></div>
+                    <div class="col-sm-8" id="detailFullName"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Username:</strong></div>
+                    <div class="col-sm-8" id="detailUsername"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Email:</strong></div>
+                    <div class="col-sm-8" id="detailEmail"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Phone:</strong></div>
+                    <div class="col-sm-8" id="detailPhone"></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-sm-4"><strong>Registered:</strong></div>
+                    <div class="col-sm-8" id="detailRegistered"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
-// Auto-refresh every 30 seconds
-setTimeout(function() {
-    window.location.reload();
-}, 30000);
+function showDetails(fullName, email, username, phone, registered) {
+    document.getElementById('detailFullName').textContent = fullName;
+    document.getElementById('detailUsername').textContent = username;
+    document.getElementById('detailEmail').textContent = email;
+    document.getElementById('detailPhone').textContent = phone;
+    document.getElementById('detailRegistered').textContent = registered;
+    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+}
 </script>
 {% endblock %}

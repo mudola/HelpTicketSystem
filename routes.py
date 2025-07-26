@@ -220,7 +220,18 @@ def admin_dashboard():
         func.count(User.id).label('count')
     ).group_by(User.role).all()
 
-    return render_template('admin_dashboard.html', stats=stats, recent_tickets=recent_tickets, user_stats=user_stats)
+    # Get pending intern approvals count
+    pending_interns_count = User.query.filter_by(
+        is_approved=False,
+        is_verified=True,
+        role='intern'
+    ).count()
+
+    return render_template('admin_dashboard.html', 
+                         stats=stats, 
+                         recent_tickets=recent_tickets, 
+                         user_stats=user_stats,
+                         pending_interns_count=pending_interns_count)
 
 @app.route('/tickets')
 @login_required
@@ -1364,13 +1375,91 @@ def pending_users():
     if current_user.role != 'admin':
         abort(403)
     
-    pending_users = User.query.filter_by(
+    # Get pending interns
+    pending_interns = User.query.filter_by(
         is_approved=False,
         is_verified=True,
         role='intern'
     ).order_by(User.created_at.desc()).all()
     
-    return render_template('pending_users.html', pending_users=pending_users)
+    # Get approved interns for reference
+    approved_interns = User.query.filter_by(
+        is_approved=True,
+        role='intern'
+    ).order_by(User.created_at.desc()).limit(10).all()
+    
+    return render_template('pending_users.html', 
+                         pending_interns=pending_interns, 
+                         approved_interns=approved_interns)
+
+@app.route('/admin/intern_management')
+@login_required
+def intern_management():
+    """Dedicated intern management interface"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    # Get all interns with different statuses
+    pending_interns = User.query.filter_by(
+        is_approved=False,
+        is_verified=True,
+        role='intern'
+    ).order_by(User.created_at.desc()).all()
+    
+    active_interns = User.query.filter_by(
+        is_approved=True,
+        is_active=True,
+        role='intern'
+    ).order_by(User.created_at.desc()).all()
+    
+    inactive_interns = User.query.filter_by(
+        is_approved=True,
+        is_active=False,
+        role='intern'
+    ).order_by(User.created_at.desc()).all()
+    
+    # Get intern performance statistics
+    intern_stats = []
+    for intern in active_interns:
+        active_tickets = Ticket.query.join(Ticket.assignees).filter(
+            User.id == intern.id,
+            Ticket.status.in_(['open', 'in_progress'])
+        ).count()
+        
+        completed_tickets = Ticket.query.join(Ticket.assignees).filter(
+            User.id == intern.id,
+            Ticket.status.in_(['resolved', 'closed'])
+        ).count()
+        
+        intern_stats.append({
+            'intern': intern,
+            'active_tickets': active_tickets,
+            'completed_tickets': completed_tickets
+        })
+    
+    return render_template('intern_management.html', 
+                         pending_interns=pending_interns,
+                         active_interns=active_interns,
+                         inactive_interns=inactive_interns,
+                         intern_stats=intern_stats)
+
+@app.route('/admin/staff_management')
+@login_required
+def staff_management():
+    """Dedicated staff/user management interface"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    # Get all staff (non-intern users)
+    staff_users = User.query.filter(User.role.in_(['user', 'admin'])).order_by(User.created_at.desc()).all()
+    
+    # Separate active and inactive staff
+    active_staff = [u for u in staff_users if u.is_active]
+    inactive_staff = [u for u in staff_users if not u.is_active]
+    
+    return render_template('staff_management.html', 
+                         active_staff=active_staff,
+                         inactive_staff=inactive_staff)
 
 @app.route('/admin/users/<int:user_id>/approve', methods=['POST'])
 @login_required

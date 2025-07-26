@@ -1,0 +1,265 @@
+
+{% extends "base.html" %}
+
+{% block title %}Staff Management - ICT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users me-2"></i>Staff Management</h2>
+    <div>
+        <a href="{{ url_for('intern_management') }}" class="btn btn-outline-warning me-2">
+            <i class="fas fa-user-graduate me-2"></i>Intern Management
+        </a>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Active Staff</h6>
+                        <h3 class="mb-0">{{ active_staff|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-tie fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Inactive Staff</h6>
+                        <h3 class="mb-0">{{ inactive_staff|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-slash fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Staff</h6>
+                        <h3 class="mb-0">{{ (active_staff|length + inactive_staff|length) }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Staff List -->
+    <div class="col-md-8">
+        <!-- Active Staff -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Active Staff Members</h5>
+            </div>
+            <div class="card-body">
+                {% if active_staff %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in active_staff %}
+                            <tr>
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>{{ user.full_name }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'secondary' }}">
+                                        {{ user.role.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                onclick="showPasswordModal({{ user.id }}, '{{ user.full_name }}')" 
+                                                title="Change Password">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        {% if user.id != current_user.id %}
+                                        <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.id) }}" style="display: inline;" 
+                                              onsubmit="return confirm('Are you sure you want to deactivate {{ user.full_name }}?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Deactivate User">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No active staff members.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Inactive Staff -->
+        {% if inactive_staff %}
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-slash me-2"></i>Inactive Staff Members</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in inactive_staff %}
+                            <tr class="table-secondary">
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>{{ user.full_name }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'secondary' }}">
+                                        {{ user.role.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-success btn-sm" 
+                                                onclick="return confirm('Reactivate {{ user.full_name }}?')"
+                                                title="Reactivate User">
+                                            <i class="fas fa-check me-1"></i>Reactivate
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Add New Staff -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Add New Staff</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_user') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" name="username" required minlength="4" maxlength="20">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" name="full_name" required maxlength="100">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" required minlength="6">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-control" name="role" required>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Create Staff Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Update Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Staff Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_user_password') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <p>Update password for: <strong id="userName"></strong></p>
+                    <input type="hidden" name="user_id" id="userId">
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" id="newPassword" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="confirmPassword" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showPasswordModal(userId, userName) {
+    document.getElementById('userId').value = userId;
+    document.getElementById('userName').textContent = userName;
+    new bootstrap.Modal(document.getElementById('passwordModal')).show();
+}
+</script>
+{% endblock %}
