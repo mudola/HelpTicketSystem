@@ -1447,11 +1447,15 @@ def intern_management():
             'completed_tickets': completed_tickets
         })
     
+    # Import csrf for token generation
+    from flask_wtf.csrf import generate_csrf
+    
     return render_template('intern_management.html', 
                          pending_interns=pending_interns,
                          active_interns=active_interns,
                          inactive_interns=inactive_interns,
-                         intern_stats=intern_stats)
+                         intern_stats=intern_stats,
+                         csrf_token=generate_csrf)
 
 @app.route('/admin/staff_management')
 @login_required

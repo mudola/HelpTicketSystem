@@ -177,7 +177,7 @@
                             <div class="btn-group" role="group">
                                 <form method="POST" action="{{ url_for('toggle_user_status', user_id=intern.id) }}" style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-warning btn-sm" 
+                                    <button type="submit" class="btn btn-warning btn-sm"</old_str> 
                                             onclick="return confirm('Deactivate {{ intern.full_name }}?')"
                                             title="Deactivate Intern">
                                         <i class="fas fa-ban"></i>
@@ -229,7 +229,7 @@
                         <td>
                             <form method="POST" action="{{ url_for('toggle_user_status', user_id=intern.id) }}" style="display: inline;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                <button type="submit" class="btn btn-success btn-sm" 
+                                <button type="submit" class="btn btn-success btn-sm"</old_str> 
                                         onclick="return confirm('Reactivate {{ intern.full_name }}?')"
                                         title="Reactivate Intern">
                                     <i class="fas fa-check me-1"></i>Reactivate
