@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const notificationsList = document.getElementById('notifications-list');
     const notificationBadge = document.getElementById('notification-badge');
     const markAllReadBtn = document.getElementById('mark-all-read');
+    const clearAllBtn = document.getElementById('clear-all-notifications');
 
     // Load notifications
     function loadNotifications() {
@@ -30,15 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
                            href="#" 
                            data-notification-id="${notification.id}" 
                            data-notification-link="${notification.link || ''}"
+                           data-is-read="${notification.is_read}"
                            style="cursor: pointer;">
                             <div class="d-flex align-items-start">
                                 <div class="flex-shrink-0 me-3">
                                     <i class="fas fa-${iconClass} ${colorClass}"></i>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-1">${notification.title}</h6>
+                                    <h6 class="mb-1 ${!notification.is_read ? 'fw-bold' : ''}">${notification.title}</h6>
                                     <p class="mb-1 small text-muted">${notification.message.substring(0, 100)}${notification.message.length > 100 ? '...' : ''}</p>
                                     <small class="text-muted">${notification.created_at}</small>
+                                    ${!notification.is_read ? '<span class="badge bg-primary ms-2" style="font-size: 0.6rem;">New</span>' : ''}
                                 </div>
                             </div>
                         </a>
@@ -50,6 +53,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         e.preventDefault();
                         const notificationId = this.getAttribute('data-notification-id');
                         const link = this.getAttribute('data-notification-link');
+                        const isRead = this.getAttribute('data-is-read') === 'true';
+                        
+                        // Visual feedback - mark as read immediately
+                        if (!isRead) {
+                            this.classList.remove('notification-new');
+                            this.querySelector('h6').classList.remove('fw-bold');
+                            const badge = this.querySelector('.badge');
+                            if (badge) badge.remove();
+                        }
+                        
                         handleNotificationClick(notificationId, link);
                     });
                     
@@ -106,6 +119,10 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const csrfToken = getCSRFToken();
             
+            // Show loading state
+            markAllReadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+            markAllReadBtn.disabled = true;
+            
             fetch('/api/notifications/mark_all_read', {
                 method: 'POST',
                 headers: {
@@ -116,15 +133,84 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Immediately update badge to 0
+                    if (notificationBadge) {
+                        notificationBadge.style.display = 'none';
+                        notificationBadge.textContent = '0';
+                        notificationBadge.classList.remove('new-notification');
+                    }
+                    
+                    // Reload notifications and update count
                     updateUnreadCount();
                     loadNotifications();
                     showNotification(`Marked ${data.marked_count} notifications as read`, 'success');
                 } else {
                     console.error('Failed to mark notifications as read');
+                    showNotification('Failed to mark notifications as read', 'danger');
                 }
             }).catch(error => {
                 console.error('Error marking notifications as read:', error);
                 showNotification('Error marking notifications as read', 'danger');
+            }).finally(() => {
+                // Restore button state
+                markAllReadBtn.innerHTML = 'Mark all read';
+                markAllReadBtn.disabled = false;
+            });
+        });
+    }
+
+    // Clear all notifications
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (!confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+                return;
+            }
+            
+            const csrfToken = getCSRFToken();
+            
+            // Show loading state
+            clearAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...';
+            clearAllBtn.disabled = true;
+            
+            fetch('/api/notifications/clear_all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Immediately clear the badge
+                    if (notificationBadge) {
+                        notificationBadge.style.display = 'none';
+                        notificationBadge.textContent = '0';
+                        notificationBadge.classList.remove('new-notification');
+                    }
+                    
+                    // Clear the notifications list
+                    if (notificationsList) {
+                        notificationsList.innerHTML = '<li class="dropdown-item text-center text-muted">No notifications</li>';
+                    }
+                    
+                    showNotification(`Cleared ${data.cleared_count} notifications`, 'success');
+                    
+                    // Update count to ensure consistency
+                    updateUnreadCount();
+                } else {
+                    console.error('Failed to clear notifications');
+                    showNotification('Failed to clear notifications', 'danger');
+                }
+            }).catch(error => {
+                console.error('Error clearing notifications:', error);
+                showNotification('Error clearing notifications', 'danger');
+            }).finally(() => {
+                // Restore button state
+                clearAllBtn.innerHTML = 'Clear all';
+                clearAllBtn.disabled = false;
             });
         });
     }
@@ -209,8 +295,21 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({})
         }).then(response => {
             if (response.ok) {
+                // Immediately update the UI
                 updateUnreadCount();
                 loadNotifications();
+                
+                // Update badge if it exists
+                if (notificationBadge) {
+                    const currentCount = parseInt(notificationBadge.textContent) || 0;
+                    const newCount = Math.max(0, currentCount - 1);
+                    if (newCount === 0) {
+                        notificationBadge.style.display = 'none';
+                        notificationBadge.classList.remove('new-notification');
+                    } else {
+                        notificationBadge.textContent = newCount > 99 ? '99+' : newCount;
+                    }
+                }
             }
         }).catch(error => {
             console.error('Error marking notification as read:', error);

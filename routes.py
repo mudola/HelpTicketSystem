@@ -1246,6 +1246,17 @@ def api_recent_notifications():
     
     return jsonify(notification_data)
 
+@app.route('/api/notifications/clear_all', methods=['POST'])
+@login_required
+def api_clear_all_notifications():
+    """Clear all notifications for current user"""
+    try:
+        count = NotificationManager.clear_all_notifications(current_user.id)
+        return jsonify({'success': True, 'cleared_count': count})
+    except Exception as e:
+        print(f"Error clearing all notifications: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/analytics')
 @login_required

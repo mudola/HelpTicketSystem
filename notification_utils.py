@@ -336,6 +336,21 @@ class NotificationManager:
         return Notification.query.filter_by(user_id=user_id, is_read=False).count()
     
     @staticmethod
+    def clear_all_notifications(user_id):
+        """Delete all notifications for a user"""
+        try:
+            notifications = Notification.query.filter_by(user_id=user_id).all()
+            count = len(notifications)
+            for notification in notifications:
+                db.session.delete(notification)
+            db.session.commit()
+            return count
+        except Exception as e:
+            logger.error(f"Error clearing all notifications: {e}")
+            db.session.rollback()
+            return 0
+    
+    @staticmethod
     def notify_new_user_registration(user):
         """Send notifications to admins about new user registration"""
         from models import User
