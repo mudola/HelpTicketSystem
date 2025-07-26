@@ -52,17 +52,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update unread count
     function updateUnreadCount() {
-        if (!notificationBadge) return;
-
         fetch('/api/notifications/unread_count')
             .then(response => response.json())
             .then(data => {
                 const count = data.count || 0;
                 if (count > 0) {
                     notificationBadge.textContent = count > 99 ? '99+' : count;
-                    notificationBadge.style.display = 'block';
+                    notificationBadge.style.display = 'flex';
+                    notificationBadge.classList.add('new-notification');
+
+                    // Remove animation after 3 seconds
+                    setTimeout(() => {
+                        notificationBadge.classList.remove('new-notification');
+                    }, 3000);
                 } else {
                     notificationBadge.style.display = 'none';
+                    notificationBadge.classList.remove('new-notification');
                 }
             })
             .catch(error => {

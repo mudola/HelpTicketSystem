@@ -1523,6 +1523,74 @@ body, html {
     right: -8px;
 }
 
+/* Enhanced notification badge styling */
+#notification-badge {
+    position: absolute !important;
+    top: -6px !important;
+    right: -6px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    color: white !important;
+    border: 2px solid white !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3) !important;
+    z-index: 1000 !important;
+    text-align: center !important;
+}
+
+/* Notification bell icon styling */
+#notificationsDropdown {
+    position: relative;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+#notificationsDropdown:hover {
+    color: white !important;
+    transform: scale(1.1);
+}
+
+/* Animation for new notifications */
+@keyframes notificationPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+#notification-badge.new-notification {
+    animation: notificationPulse 1.5s ease-in-out infinite;
+}
+
+/* Ensure badge visibility on mobile */
+@media (max-width: 768px) {
+    #notification-badge {
+        top: -4px !important;
+        right: -4px !important;
+        min-width: 18px !important;
+        height: 18px !important;
+        font-size: 0.65rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #notification-badge {
+        top: -2px !important;
+        right: -2px !important;
+        min-width: 16px !important;
+        height: 16px !important;
+        font-size: 0.6rem !important;
+    }
+}
+
 /* =====================
    Loading States
    ===================== */
