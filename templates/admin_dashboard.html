@@ -275,7 +275,7 @@
                                     <br><small class="text-muted category-desc">{{ category.description[:50] }}{% if category.description|length > 50 %}...{% endif %}</small>
                                 {% endif %}
                             </div>
-                            <small class="text-muted">{{ category.tickets|length }} tickets</small>
+                            <small class="text-muted">{{ category.tickets.count() }} tickets</small>
                         </div>
                         {% endfor %}
                     </div>
