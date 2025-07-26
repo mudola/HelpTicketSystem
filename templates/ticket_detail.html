@@ -229,6 +229,7 @@
             <div class="card-body">
                 {% if (current_user.role == 'admin' or (current_user.role == 'user' and ticket.created_by_id == current_user.id)) and ticket.status == 'resolved' %}
                 <form method="POST" action="{{ url_for('close_ticket', id=ticket.id) }}" class="mb-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Are you sure you want to close this ticket?')">
                         <i class="fas fa-times me-2"></i>Close Ticket
                     </button>
