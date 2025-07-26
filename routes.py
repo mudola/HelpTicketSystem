@@ -1352,32 +1352,7 @@ def toggle_user_status(user_id):
     flash(f'User {user.full_name} has been {status_text}', 'success')
     return redirect(url_for('user_management'))
 
-@app.route('/admin/users/<int:user_id>/approve', methods=['POST'])
-@login_required
-def approve_user(user_id):
-    """Admin route to approve new user registrations"""
-    if current_user.role != 'admin':
-        abort(403)
-    
-    user = User.query.get_or_404(user_id)
-    
-    if user.is_approved:
-        flash(f'{user.full_name} is already approved', 'info')
-        return redirect(url_for('user_management'))
-    
-    # Approve the user
-    user.is_approved = True
-    user.is_active = True
-    user.approved_by_id = current_user.id
-    user.approved_at = datetime.utcnow()
-    
-    db.session.commit()
-    
-    # Send welcome notification to the approved user
-    NotificationManager.notify_user_approved(user, current_user)
-    
-    flash(f'{user.full_name} has been approved and activated', 'success')
-    return redirect(url_for('user_management'))
+
 
 @app.route('/admin/pending_users')
 @login_required
@@ -1393,3 +1368,33 @@ def pending_users():
     ).order_by(User.created_at.desc()).all()
     
     return render_template('pending_users.html', pending_users=pending_users)
+
+@app.route('/admin/users/<int:user_id>/approve', methods=['POST'])
+@login_required
+def approve_user_account(user_id):
+    """Approve a pending user account"""
+    if current_user.role != 'admin':
+        abort(403)
+    
+    user = User.query.get_or_404(user_id)
+    
+    if user.is_approved:
+        flash(f'{user.full_name} is already approved', 'info')
+        return redirect(url_for('pending_users'))
+    
+    # Approve the user
+    user.is_approved = True
+    user.is_active = True
+    user.approved_by_id = current_user.id
+    user.approved_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    # Send notification to the approved user
+    try:
+        NotificationManager.notify_user_approved(user, current_user)
+    except:
+        pass  # Don't fail if notification fails
+    
+    flash(f'{user.full_name} has been approved and can now login', 'success')
+    return redirect(url_for('pending_users'))
