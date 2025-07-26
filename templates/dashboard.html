@@ -161,13 +161,20 @@
                             <td>{{ ticket.creator.full_name }}</td>
                             {% else %}
                             <td>
-                              {% if ticket.assignees|length > 0 %}
-                                {% for user in ticket.assignees %}
-                                  <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                              {% else %}
-                                <span class="text-muted">Unassigned</span>
-                              {% endif %}
+                                {% if current_user.role == 'intern' %}
+                                    {{ ticket.creator.full_name if ticket.creator else 'Unknown' }}
+                                {% else %}
+                                    {% if ticket.assignees %}
+                                        {% for user in ticket.assignees %}
+                                            <span class="badge bg-primary me-1">{{ user.full_name }}</span>
+                                        {% endfor %}
+                                        {% if ticket.status == 'closed' %}
+                                            <br><small class="text-success">✓ Completed</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                {% endif %}
                             </td>
                             {% endif %}
                             <td>{{ ticket.updated_at|time_ago }}</td>

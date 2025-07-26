@@ -75,10 +75,13 @@
                     <td><span class="badge badge-status-{{ ticket.status|replace(' ', '_') }}">{{ ticket.status.title() }}</span></td>
                     <td><span class="badge priority-{{ ticket.priority }}">{{ ticket.priority.title() }}</span></td>
                     <td>
-                        {% if ticket.assignees|length > 0 %}
+                        {% if ticket.assignees %}
                             {% for user in ticket.assignees %}
                                 <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %} {% endif %}
                             {% endfor %}
+                            {% if ticket.status == 'closed' %}
+                                <br><small class="text-success">✓ Handled</small>
+                            {% endif %}
                         {% else %}
                             <span class="text-muted">Unassigned</span>
                         {% endif %}

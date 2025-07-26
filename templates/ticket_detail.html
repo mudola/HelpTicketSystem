@@ -62,34 +62,76 @@
                 <div class="mb-3">
                     <div class="card bg-light">
                         <div class="card-body py-2">
-                            <h6 class="card-title mb-2"><i class="fas fa-route me-2"></i>Ticket Workflow</h6>
+                            <h6 class="card-title mb-2"><i class="fas fa-route me-2"></i>Complete Ticket Workflow</h6>
                             <div class="workflow-chain">
                                 <!-- Created Step -->
-                                <div class="workflow-step">
-                                    <i class="fas fa-plus-circle text-primary"></i>
+                                <div class="workflow-step mb-2">
+                                    <i class="fas fa-plus-circle text-primary me-2"></i>
                                     <strong>Created by:</strong> {{ ticket.creator.full_name if ticket.creator else 'Unknown User' }}
-                                    <small class="text-muted">({{ ticket.created_at|format_datetime }})</small>
+                                    <small class="text-muted d-block ms-4">({{ ticket.created_at|format_datetime }})</small>
                                 </div>
                                 
-                                <!-- Assigned Step -->
+                                <!-- Assignment Step -->
                                 {% if ticket.assignees|length > 0 %}
-                                <div class="workflow-step">
-                                    <i class="fas fa-arrow-right text-muted"></i>
-                                    <i class="fas fa-user-check text-warning"></i>
+                                <div class="workflow-step mb-2">
+                                    <i class="fas fa-arrow-down text-muted me-2"></i>
+                                    <i class="fas fa-user-check text-warning me-2"></i>
                                     <strong>Assigned to:</strong>
                                     {% for user in ticket.assignees %}
-                                        <span class="badge bg-primary">{{ user.full_name }}</span>{% if not loop.last %}, {% endif %}
+                                        <span class="badge bg-primary me-1">{{ user.full_name }} ({{ user.role.title() }})</span>
                                     {% endfor %}
+                                    {% if ticket.status in ['in_progress', 'resolved', 'closed'] %}
+                                        <small class="text-success d-block ms-4">✓ Technician(s) handled this ticket</small>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="workflow-step mb-2">
+                                    <i class="fas fa-arrow-down text-muted me-2"></i>
+                                    <i class="fas fa-user-clock text-secondary me-2"></i>
+                                    <strong>Status:</strong> <span class="badge bg-warning">Unassigned</span>
+                                    <small class="text-muted d-block ms-4">Waiting for technician assignment</small>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Resolution Step -->
+                                {% if ticket.status == 'resolved' %}
+                                <div class="workflow-step mb-2">
+                                    <i class="fas fa-arrow-down text-muted me-2"></i>
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Status:</strong> <span class="badge bg-success">Resolved</span>
+                                    {% if ticket.assignees|length > 0 %}
+                                        <small class="text-success d-block ms-4">Resolved by assigned technician(s)</small>
+                                    {% endif %}
                                 </div>
                                 {% endif %}
                                 
                                 <!-- Closed Step -->
-                                {% if ticket.status == 'closed' and ticket.closed_by %}
+                                {% if ticket.status == 'closed' %}
+                                <div class="workflow-step mb-2">
+                                    <i class="fas fa-arrow-down text-muted me-2"></i>
+                                    <i class="fas fa-times-circle text-dark me-2"></i>
+                                    <strong>Closed by:</strong> {{ ticket.closed_by.full_name if ticket.closed_by else 'System' }}
+                                    <small class="text-muted d-block ms-4">({{ ticket.closed_at|format_datetime if ticket.closed_at else 'Unknown' }})</small>
+                                    {% if ticket.assignees|length > 0 %}
+                                        <div class="ms-4">
+                                            <small class="text-info">
+                                                <strong>Final Assignment Record:</strong>
+                                                {% for user in ticket.assignees %}
+                                                    {{ user.full_name }} ({{ user.role.title() }}){% if not loop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Current Status if not closed -->
+                                {% if ticket.status != 'closed' %}
                                 <div class="workflow-step">
-                                    <i class="fas fa-arrow-right text-muted"></i>
-                                    <i class="fas fa-times-circle text-success"></i>
-                                    <strong>Closed by:</strong> {{ ticket.closed_by.full_name }}
-                                    <small class="text-muted">({{ ticket.closed_at|format_datetime }})</small>
+                                    <i class="fas fa-clock text-info me-2"></i>
+                                    <strong>Current Status:</strong> 
+                                    <span class="badge {{ ticket.status|status_badge }}">{{ ticket.status.replace('_', ' ').title() }}</span>
+                                    <span class="badge {{ ticket.priority|priority_badge }} ms-1">{{ ticket.priority.title() }} Priority</span>
                                 </div>
                                 {% endif %}
                             </div>
