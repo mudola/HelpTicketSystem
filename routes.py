@@ -1398,9 +1398,13 @@ def pending_users():
         role='intern'
     ).order_by(User.created_at.desc()).limit(10).all()
     
+    # Import csrf for token generation
+    from flask_wtf.csrf import generate_csrf
+    
     return render_template('pending_users.html', 
                          pending_interns=pending_interns, 
-                         approved_interns=approved_interns)
+                         approved_interns=approved_interns,
+                         csrf_token=generate_csrf)
 
 @app.route('/admin/intern_management')
 @login_required

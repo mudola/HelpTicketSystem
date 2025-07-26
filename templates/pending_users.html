@@ -58,6 +58,7 @@
                         <td>
                             <div class="btn-group">
                                 <form method="POST" action="{{ url_for('approve_user_account', user_id=intern.id) }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-success btn-sm" 
                                             onclick="return confirm('Approve {{ intern.full_name }} as an intern?')"
                                             title="Approve Intern">
