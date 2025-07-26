@@ -122,10 +122,11 @@ body, html {
 .navbar {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     backdrop-filter: blur(10px);
-    border: none;
+    border: 1px solid;
+    border-radius: 0.75rem;
     box-shadow: var(--shadow-lg);
     padding: var(--space-4) 0;
-    height: 50px;
+    height: 65px;
     position: sticky;
     top: 0;
     z-index: 1020;
