@@ -1,224 +1,6 @@
-// Main JavaScript for ICT Helpdesk System
-
+// Global variables and initialization
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Auto-hide alerts after 5 seconds
-    const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-    alerts.forEach(function(alert) {
-        setTimeout(function() {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }, 5000);
-    });
-
-    // Form validation enhancement
-    const forms = document.querySelectorAll('.needs-validation');
-    forms.forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        });
-    });
-
-    // File upload preview
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    fileInputs.forEach(function(input) {
-        input.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const fileInfo = document.createElement('small');
-                fileInfo.className = 'text-muted d-block mt-1';
-                fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
-
-                // Remove existing file info
-                const existingInfo = input.parentNode.querySelector('.file-info');
-                if (existingInfo) {
-                    existingInfo.remove();
-                }
-
-                fileInfo.className += ' file-info';
-                input.parentNode.appendChild(fileInfo);
-            }
-        });
-    });
-
-    // Confirmation dialogs for destructive actions
-    const confirmButtons = document.querySelectorAll('[data-confirm]');
-    confirmButtons.forEach(function(button) {
-        button.addEventListener('click', function(event) {
-            const message = button.getAttribute('data-confirm') || 'Are you sure?';
-            if (!confirm(message)) {
-                event.preventDefault();
-            }
-        });
-    });
-
-    // Real-time character counter for textareas
-    const textareas = document.querySelectorAll('textarea[maxlength]');
-    textareas.forEach(function(textarea) {
-        const maxLength = textarea.getAttribute('maxlength');
-        const counter = document.createElement('small');
-        counter.className = 'text-muted float-end';
-        textarea.parentNode.appendChild(counter);
-
-        function updateCounter() {
-            const remaining = maxLength - textarea.value.length;
-            counter.textContent = `${textarea.value.length}/${maxLength}`;
-            counter.className = remaining < 50 ? 'text-danger float-end' : 'text-muted float-end';
-        }
-
-        textarea.addEventListener('input', updateCounter);
-        updateCounter();
-    });
-
-    // Real-time notification system
-    let lastNotificationCheck = Date.now();
-    
-    function showNotificationPopup(notification) {
-        // Create notification container if it doesn't exist
-        let notificationContainer = document.getElementById('notification-container');
-        if (!notificationContainer) {
-            notificationContainer = document.createElement('div');
-            notificationContainer.id = 'notification-container';
-            notificationContainer.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 9999;
-                max-width: 400px;
-            `;
-            document.body.appendChild(notificationContainer);
-        }
-
-        // Create notification popup
-        const popup = document.createElement('div');
-        popup.className = 'alert alert-info alert-dismissible fade show notification-popup';
-        popup.style.cssText = `
-            margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-left: 4px solid #007bff;
-            animation: slideInRight 0.3s ease-out;
-        `;
-        
-        const iconMap = {
-            'new_ticket': 'fas fa-ticket-alt',
-            'ticket_updated': 'fas fa-edit',
-            'new_comment': 'fas fa-comment',
-            'ticket_closed': 'fas fa-check-circle',
-            'ticket_overdue': 'fas fa-exclamation-triangle',
-            'user_registered': 'fas fa-user-plus'
-        };
-        
-        const icon = iconMap[notification.type] || 'fas fa-bell';
-        
-        popup.innerHTML = `
-            <div class="d-flex">
-                <div class="me-3">
-                    <i class="${icon} text-primary"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <strong>${notification.title}</strong>
-                    <div class="small text-muted mt-1">${notification.message}</div>
-                    ${notification.link ? `<a href="${notification.link}" class="btn btn-sm btn-outline-primary mt-2">View</a>` : ''}
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        notificationContainer.appendChild(popup);
-        
-        // Auto-dismiss after 8 seconds
-        setTimeout(() => {
-            if (popup.parentNode) {
-                popup.remove();
-            }
-        }, 8000);
-        
-        // Play notification sound (optional)
-        try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwfCCWA0fPTgjEGHm7A7+OZSA0PVqzn77BdGAg+ltryxnkpBi16yO/ejkELEGGx5+iwYBoGPJPY88p9KwUme8nt350+CRZiturqpVELDFCm4/K2YxwIOZPX8sx5LAUnd8fw3Y9ACRVeturqqVELDVOq5e+zYBoGOpTZ88p9KwUme8vt4Z0/CBVituzrp1ELDVGn5O+2YRsGOpXa88p6KgUme8zt4p4+CBZhtuvtqVILDFCn5e+2Yh0FO5Xa8sp6KwUme8vt4Z4+CBVitu3sp1ILDFGo5e6xYRsGOpTa88p7KgUmfMzt4p4+CBVhtuvtqVILDFCn5e+2Yh0GO5bZ88p6LAUmfszt4p8+CFVivO3tp1ELDVGn5O+2YRwFOpXY88p7KgYmfMzs4p4/CBVhuuvrqVILDFGo5O62YRwGO5fZ88p6LAUmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+CFVhu+vtqVILDFCp5O62YRwGO5fZ88p6LAYmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+CFVhu+vtqVILDFCp5O62YRwGO5fZ88p6LAYmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+CFVhu+vtqVILDFCp5O62YRwGO5fZ88p6LAYmfs3s4p8+CFZjvO3tp1ELDVKo5O+2YRwGOpbY88p7KgYmfs3s4p8+');
-            audio.volume = 0.3;
-            audio.play().catch(() => {}); // Ignore audio errors
-        } catch (e) {}
-    }
-    
-    function checkForNewNotifications() {
-        if (!document.hidden) {
-            fetch('/api/notifications/recent?since=' + lastNotificationCheck)
-                .then(response => response.json())
-                .then(notifications => {
-                    notifications.forEach(notification => {
-                        showNotificationPopup(notification);
-                    });
-                    lastNotificationCheck = Date.now();
-                })
-                .catch(error => console.log('Notification check failed:', error));
-        }
-    }
-    
-    // Check for new notifications every 5 seconds
-    setInterval(checkForNewNotifications, 5000);
-    
-    // Add CSS animation for notification popup
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        .notification-popup {
-            animation: slideInRight 0.3s ease-out;
-        }
-        
-        @media (max-width: 768px) {
-            #notification-container {
-                left: 10px !important;
-                right: 10px !important;
-                top: 10px !important;
-                max-width: none !important;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Auto-refresh ticket status (every 30 seconds)
-    if (window.location.pathname.includes('/ticket/')) {
-        setInterval(function() {
-            refreshTicketStatus();
-        }, 30000);
-    }
-
-    // Search functionality for tables
-    const searchInputs = document.querySelectorAll('.table-search');
-    searchInputs.forEach(function(input) {
-        input.addEventListener('input', function() {
-            const searchTerm = input.value.toLowerCase();
-            const table = input.closest('.card').querySelector('table tbody');
-            const rows = table.querySelectorAll('tr');
-
-            rows.forEach(function(row) {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
-        });
-    });
-
-    // Notification management system - moved to global scope
+    // Notification system
     const notificationsDropdown = document.getElementById('notificationsDropdown');
     const notificationsList = document.getElementById('notifications-list');
     const notificationBadge = document.getElementById('notification-badge');
@@ -226,97 +8,67 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load notifications
     function loadNotifications() {
-        console.log('Loading notifications...');
+        if (!notificationsList) return;
+
         fetch('/api/notifications')
-            .then(response => {
-                console.log('Notifications response:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(notifications => {
-                console.log('Received notifications:', notifications);
                 if (notifications.length === 0) {
-                    notificationsList.innerHTML = `
-                        <li class="text-center py-3">
-                            <span class="text-muted">No notifications</span>
-                        </li>
-                    `;
+                    notificationsList.innerHTML = '<li class="dropdown-item text-center text-muted">No notifications</li>';
                     return;
                 }
 
-                notificationsList.innerHTML = notifications.map(notification => `
-                    <li>
-                        <a class="dropdown-item notification-item ${notification.is_read ? '' : 'notification-unread'}" 
-                           href="#" onclick="handleNotificationClick(${notification.id}, '${notification.link}')">
-                            <h6 class="mb-1">${notification.title}</h6>
-                            <p class="mb-1">${notification.message}</p>
-                            <small class="text-muted">${notification.created_at}</small>
+                notificationsList.innerHTML = '';
+                notifications.forEach(notification => {
+                    const notificationElement = document.createElement('li');
+                    const isNew = !notification.is_read ? 'notification-new' : '';
+                    const iconClass = getNotificationIcon(notification.type);
+                    const colorClass = getNotificationColor(notification.type);
+
+                    notificationElement.innerHTML = `
+                        <a class="dropdown-item ${isNew}" href="#" onclick="handleNotificationClick(${notification.id}, '${notification.link || ''}')">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-3">
+                                    <i class="fas fa-${iconClass} ${colorClass}"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${notification.title}</h6>
+                                    <p class="mb-1 small text-muted">${notification.message}</p>
+                                    <small class="text-muted">${notification.created_at}</small>
+                                </div>
+                            </div>
                         </a>
-                    </li>
-                `).join('');
+                    `;
+                    notificationsList.appendChild(notificationElement);
+                });
             })
             .catch(error => {
                 console.error('Error loading notifications:', error);
-                notificationsList.innerHTML = `
-                    <li class="text-center py-3">
-                        <span class="text-danger">Error loading notifications</span>
-                    </li>
-                `;
+                if (notificationsList) {
+                    notificationsList.innerHTML = '<li class="dropdown-item text-center text-danger">Error loading notifications</li>';
+                }
             });
     }
 
+    // Update unread count
     function updateUnreadCount() {
+        if (!notificationBadge) return;
+
         fetch('/api/notifications/unread_count')
             .then(response => response.json())
             .then(data => {
-                const count = data.count;
-                notificationBadge.textContent = count;
-                notificationBadge.style.display = count > 0 ? 'inline' : 'none';
+                const count = data.count || 0;
+                if (count > 0) {
+                    notificationBadge.textContent = count > 99 ? '99+' : count;
+                    notificationBadge.style.display = 'block';
+                } else {
+                    notificationBadge.style.display = 'none';
+                }
             })
             .catch(error => {
-                console.error('Error loading unread count:', error);
+                console.error('Error updating unread count:', error);
             });
     }
-
-    function getNotificationIcon(type) {
-        const icons = {
-            'new_ticket': 'plus-circle',
-            'ticket_updated': 'edit',
-            'new_comment': 'comment',
-            'ticket_closed': 'check-circle',
-            'ticket_overdue': 'exclamation-triangle'
-        };
-        return icons[type] || 'bell';
-    }
-
-    function getNotificationColor(type) {
-        const colors = {
-            'new_ticket': 'text-success',
-            'ticket_updated': 'text-warning',
-            'new_comment': 'text-info',
-            'ticket_closed': 'text-success',
-            'ticket_overdue': 'text-danger'
-        };
-        return colors[type] || 'text-primary';
-    }
-
-    // Handle notification click
-    window.handleNotificationClick = function(notificationId, link) {
-        // Mark as read
-        fetch(`/api/notifications/${notificationId}/mark_read`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        }).then(() => {
-            updateUnreadCount();
-            loadNotifications();
-        });
-
-        // Navigate to link
-        if (link && link !== 'null') {
-            window.location.href = link;
-        }
-    };
 
     // Mark all as read
     if (markAllReadBtn) {
@@ -360,114 +112,238 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Utility functions
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function refreshTicketStatus() {
-    // Placeholder for future real-time status updates
-    // Currently disabled to prevent console errors
-}
-
-function showNotification(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
-    document.body.appendChild(alertDiv);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-
-// Form helpers
-function clearForm(formId) {
-    const form = document.getElementById(formId);
-    if (form) {
-        form.reset();
-        form.classList.remove('was-validated');
+    function getNotificationIcon(type) {
+        const icons = {
+            'new_ticket': 'plus-circle',
+            'ticket_updated': 'edit',
+            'new_comment': 'comment',
+            'ticket_closed': 'check-circle',
+            'ticket_overdue': 'exclamation-triangle',
+            'user_registered': 'user-plus',
+            'account_approved': 'check-circle'
+        };
+        return icons[type] || 'bell';
     }
-}
 
-function setFormData(formId, data) {
-    const form = document.getElementById(formId);
-    if (form) {
-        Object.keys(data).forEach(key => {
-            const field = form.querySelector(`[name="${key}"]`);
-            if (field) {
-                field.value = data[key];
+    function getNotificationColor(type) {
+        const colors = {
+            'new_ticket': 'text-success',
+            'ticket_updated': 'text-warning',
+            'new_comment': 'text-info',
+            'ticket_closed': 'text-success',
+            'ticket_overdue': 'text-danger',
+            'user_registered': 'text-primary',
+            'account_approved': 'text-success'
+        };
+        return colors[type] || 'text-primary';
+    }
+
+    // Show notification toast
+    function showNotification(message, type = 'info') {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
             }
+        }, 5000);
+    }
+
+    // Handle notification click
+    window.handleNotificationClick = function(notificationId, link) {
+        // Mark as read
+        fetch(`/api/notifications/${notificationId}/mark_read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(() => {
+            updateUnreadCount();
+            loadNotifications();
+        }).catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+
+        // Navigate to link
+        if (link && link !== 'null' && link !== 'None') {
+            window.location.href = link;
+        }
+    };
+
+    // Auto-complete for ticket descriptions
+    const descriptionInput = document.getElementById('description');
+    if (descriptionInput) {
+        let suggestionsCache = [];
+
+        // Load suggestions
+        fetch('/api/ticket_descriptions')
+            .then(response => response.json())
+            .then(data => {
+                suggestionsCache = data;
+            })
+            .catch(error => {
+                console.error('Error loading ticket descriptions:', error);
+            });
+
+        // Create datalist for suggestions
+        const datalist = document.createElement('datalist');
+        datalist.id = 'description-suggestions';
+        descriptionInput.setAttribute('list', 'description-suggestions');
+        descriptionInput.parentNode.appendChild(datalist);
+
+        // Update suggestions on input
+        descriptionInput.addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            const matches = suggestionsCache.filter(desc => 
+                desc.toLowerCase().includes(value)
+            ).slice(0, 10);
+
+            datalist.innerHTML = '';
+            matches.forEach(match => {
+                const option = document.createElement('option');
+                option.value = match;
+                datalist.appendChild(option);
+            });
         });
     }
-}
 
-// Keyboard shortcuts
-document.addEventListener('keydown', function(event) {
-    // Ctrl+N for new ticket
-    if (event.ctrlKey && event.key === 'n') {
-        event.preventDefault();
-        window.location.href = '/ticket/new';
-    }
+    // Enhanced form validation
+    const forms = document.querySelectorAll('form[data-validate]');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
 
-    // Ctrl+D for dashboard
-    if (event.ctrlKey && event.key === 'd') {
-        event.preventDefault();
-        window.location.href = '/dashboard';
-    }
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
 
-    // Escape to close modals
-    if (event.key === 'Escape') {
-        const openModals = document.querySelectorAll('.modal.show');
-        openModals.forEach(modal => {
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) {
-                bsModal.hide();
+            if (!isValid) {
+                e.preventDefault();
+                showNotification('Please fill in all required fields', 'danger');
+            }
+        });
+    });
+
+    // Real-time search functionality
+    const searchInputs = document.querySelectorAll('[data-search]');
+    searchInputs.forEach(input => {
+        const targetTable = document.querySelector(input.dataset.search);
+        if (targetTable) {
+            input.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = targetTable.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize popovers
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+
+    // Dynamic form handling
+    const locationSelect = document.getElementById('location');
+    const locationUnitSelect = document.getElementById('location_unit');
+    const locationSubunitSelect = document.getElementById('location_subunit');
+    const locationDetailSelect = document.getElementById('location_detail');
+
+    if (locationUnitSelect && locationSubunitSelect && locationDetailSelect) {
+        const subunits = {
+            'SWA': ['LSHR', 'USHR'],
+            'UHS': ['Staff clinic', 'Student clinic'],
+            'Confucius': ['Block A', 'Block B', 'Block C']
+        };
+
+        const locations = {
+            'LSHR': ['Location 1', 'Location 2'],
+            'USHR': ['Location 3', 'Location 4'],
+            'Staff clinic': ['Location 5', 'Location 6'],
+            'Student clinic': ['Location 7', 'Location 8'],
+            'Block A': ['Location 9', 'Location 10'],
+            'Block B': ['Location 11', 'Location 12'],
+            'Block C': ['Location 13', 'Location 14']
+        };
+
+        locationUnitSelect.addEventListener('change', function() {
+            const selectedUnit = this.value;
+            locationSubunitSelect.innerHTML = '<option value="">-- Select Subunit --</option>';
+            locationDetailSelect.innerHTML = '<option value="">-- Select Location --</option>';
+
+            if (selectedUnit && subunits[selectedUnit]) {
+                subunits[selectedUnit].forEach(subunit => {
+                    const option = document.createElement('option');
+                    option.value = subunit;
+                    option.textContent = subunit;
+                    locationSubunitSelect.appendChild(option);
+                });
+            }
+        });
+
+        locationSubunitSelect.addEventListener('change', function() {
+            const selectedSubunit = this.value;
+            locationDetailSelect.innerHTML = '<option value="">-- Select Location --</option>';
+
+            if (selectedSubunit && locations[selectedSubunit]) {
+                locations[selectedSubunit].forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location;
+                    option.textContent = location;
+                    locationDetailSelect.appendChild(option);
+                });
             }
         });
     }
 });
 
-// Print functionality
-function printTicket(ticketId) {
-    const printWindow = window.open(`/ticket/${ticketId}/print`, '_blank');
-    printWindow.onload = function() {
-        printWindow.print();
-        printWindow.close();
-    };
+// Global utility functions
+function confirmDelete(message) {
+    return confirm(message || 'Are you sure you want to delete this item?');
 }
 
-// Export functionality
-function exportTickets(format = 'csv') {
-    const params = new URLSearchParams(window.location.search);
-    params.set('export', format);
-    window.location.href = `/tickets?${params.toString()}`;
+function showPasswordModal(userId, userName) {
+    const modal = document.getElementById('passwordModal');
+    if (modal) {
+        document.getElementById('userId').value = userId;
+        document.getElementById('userName').textContent = userName;
+        new bootstrap.Modal(modal).show();
+    }
 }
 
-// Theme toggler (if needed)
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-bs-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+function showInternDetails(id, fullName, email, username, phone, registered) {
+    const modal = document.getElementById('internDetailsModal');
+    if (modal) {
+        document.getElementById('internFullName').textContent = fullName;
+        document.getElementById('internUsername').textContent = username;
+        document.getElementById('internEmail').textContent = email;
+        document.getElementById('internPhone').textContent = phone || 'N/A';
+        document.getElementById('internRegistered').textContent = registered;
+        new bootstrap.Modal(modal).show();
+    }
 }
-
-// Load saved theme
-function loadTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-bs-theme', savedTheme);
-}
-
-// Initialize theme on load
-loadTheme();

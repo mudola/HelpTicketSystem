@@ -1083,6 +1083,16 @@ def delete_user(user_id):
     for comment in comments:
         comment.author_id = None
 
+    # Delete notifications for this user (notifications cannot exist without a user)
+    Notification.query.filter_by(user_id=user_id).delete()
+
+    # Delete notification settings for this user
+    NotificationSettings.query.filter_by(user_id=user_id).delete()
+
+    # Delete ticket history entries by this user
+    from models import TicketHistory
+    TicketHistory.query.filter_by(user_id=user_id).delete()
+
     # Delete the user
     db.session.delete(user)
     db.session.commit()
