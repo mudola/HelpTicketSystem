@@ -24,21 +24,62 @@
             <p class="admin-subtitle mb-0">System overview and management tools</p>
         </div>
         <div class="admin-actions">
-            <div class="btn-group me-2" role="group">
-                <a href="{{ url_for('reports') }}" class="btn btn-outline-info">
-                    <i class="fas fa-chart-line me-1"></i>Reports
-                </a>
-                <a href="{{ url_for('user_management') }}" class="btn btn-outline-warning">
-                    <i class="fas fa-users-cog me-1"></i>Users
-                </a>
-            </div>
-            <div class="btn-group" role="group">
-                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-list-ul me-1"></i>All Tickets
-                </a>
-                <a href="{{ url_for('new_ticket') }}" class="btn btn-primary btn-pulse">
-                    <i class="fas fa-plus me-1"></i>New Ticket
-                </a>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle admin-toggle-btn" type="button" id="adminActionsDropdown" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog me-1"></i>Quick Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end admin-actions-dropdown" aria-labelledby="adminActionsDropdown">
+                    <li><h6 class="dropdown-header"><i class="fas fa-chart-bar me-2"></i>Reports & Analytics</h6></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('reports') }}">
+                            <i class="fas fa-chart-line me-2 text-info"></i>View Reports
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    
+                    <li><h6 class="dropdown-header"><i class="fas fa-users me-2"></i>User Management</h6></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('user_management') }}">
+                            <i class="fas fa-users-cog me-2 text-warning"></i>All Users
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('intern_management') }}">
+                            <i class="fas fa-user-graduate me-2 text-primary"></i>Intern Management
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('staff_management') }}">
+                            <i class="fas fa-user-tie me-2 text-success"></i>Staff Management
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    
+                    <li><h6 class="dropdown-header"><i class="fas fa-ticket-alt me-2"></i>Ticket Management</h6></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('tickets_list') }}">
+                            <i class="fas fa-list-ul me-2 text-secondary"></i>All Tickets
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('tickets_list', status='open') }}">
+                            <i class="fas fa-clock me-2 text-warning"></i>Open Tickets
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('tickets_list', priority='urgent') }}">
+                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Urgent Tickets
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    
+                    <li>
+                        <a class="dropdown-item highlight-item" href="{{ url_for('new_ticket') }}">
+                            <i class="fas fa-plus-circle me-2 text-primary"></i>Create New Ticket
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
