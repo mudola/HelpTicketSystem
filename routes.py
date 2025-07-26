@@ -77,11 +77,11 @@ def login():
                 
                 # Check approval status for interns only
                 if user.role == 'intern' and not user.is_approved:
-                    print(f"DEBUG: Intern {user.username} is not approved. is_approved={user.is_approved}, is_active={user.is_active}")
+                    print(f"DEBUG: Intern {user.username} is not approved. is_approved={user.is_approved}, is_active={user.is_active}, role={user.role}")
                     flash('Your intern account is pending admin approval. Please wait for activation.', 'warning')
                     return redirect(url_for('index'))
                 
-                print(f"DEBUG: User {user.username} login - role={user.role}, is_approved={user.is_approved}, is_active={user.is_active}")
+                print(f"DEBUG: User {user.username} login SUCCESS - role={user.role}, is_approved={user.is_approved}, is_active={user.is_active}")
                 
                 login_user(user, remember=remember_me)
                 next_page = request.args.get('next')
@@ -1385,13 +1385,18 @@ def approve_user_account(user_id):
         flash(f'{user.full_name} is already approved', 'info')
         return redirect(url_for('pending_users'))
     
-    # Approve the user
+    print(f"DEBUG: Approving user {user.username} - Current role: {user.role}")
+    
+    # Approve the user - preserve the original role
     user.is_approved = True
     user.is_active = True
     user.approved_by_id = current_user.id
     user.approved_at = datetime.utcnow()
+    # DO NOT change the role - keep it as 'intern'
     
     db.session.commit()
+    
+    print(f"DEBUG: After approval - User {user.username} role: {user.role}, is_approved: {user.is_approved}, is_active: {user.is_active}")
     
     # Send notification to the approved user
     try:
@@ -1399,5 +1404,5 @@ def approve_user_account(user_id):
     except:
         pass  # Don't fail if notification fails
     
-    flash(f'{user.full_name} has been approved and can now login', 'success')
+    flash(f'{user.full_name} (Intern) has been approved and can now login', 'success')
     return redirect(url_for('pending_users'))
