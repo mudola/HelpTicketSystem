@@ -13,32 +13,54 @@
 </div>
 {% endif %}
 
-<!-- Enhanced Header with Gradient Background -->
+<!-- Enhanced Header with Better Layout -->
 <div class="admin-header mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h2 class="admin-title">
-                <i class="fas fa-crown me-2 text-warning"></i>
-                Admin Control Center
-            </h2>
-            <p class="admin-subtitle mb-0">System overview and management tools</p>
-        </div>
-        <div class="admin-actions">
-            <div class="btn-group me-2" role="group">
-                <a href="{{ url_for('reports') }}" class="btn btn-outline-info">
-                    <i class="fas fa-chart-line me-2"></i>Reports
-                </a>
-                <a href="{{ url_for('user_management') }}" class="btn btn-outline-warning">
-                    <i class="fas fa-users-cog me-2"></i>Users
-                </a>
+    <div class="container-fluid p-0">
+        <div class="row align-items-center">
+            <!-- Left side - Title and subtitle -->
+            <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
+                <div class="header-content">
+                    <h2 class="admin-title mb-2">
+                        <i class="fas fa-crown me-2"></i>
+                        Admin Control Center
+                    </h2>
+                    <p class="admin-subtitle mb-0">
+                        <i class="fas fa-tachometer-alt me-1"></i>
+                        System overview and management tools
+                    </p>
+                </div>
             </div>
-            <div class="btn-group" role="group">
-                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-list-ul me-2"></i>All Tickets
-                </a>
-                <a href="{{ url_for('new_ticket') }}" class="btn btn-primary btn-pulse">
-                    <i class="fas fa-plus me-2"></i>New Ticket
-                </a>
+            
+            <!-- Right side - Action buttons -->
+            <div class="col-lg-6 col-md-12">
+                <div class="admin-actions">
+                    <div class="row g-2">
+                        <div class="col-xl-6 col-lg-12 col-md-6 col-sm-12">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{{ url_for('reports') }}" class="btn btn-outline-light btn-admin">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    <span class="btn-text">Reports</span>
+                                </a>
+                                <a href="{{ url_for('user_management') }}" class="btn btn-outline-light btn-admin">
+                                    <i class="fas fa-users-cog me-2"></i>
+                                    <span class="btn-text">Users</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-xl-6 col-lg-12 col-md-6 col-sm-12">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-light btn-admin">
+                                    <i class="fas fa-list-ul me-2"></i>
+                                    <span class="btn-text">Tickets</span>
+                                </a>
+                                <a href="{{ url_for('new_ticket') }}" class="btn btn-light btn-admin btn-primary-action">
+                                    <i class="fas fa-plus me-2"></i>
+                                    <span class="btn-text">New Ticket</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
