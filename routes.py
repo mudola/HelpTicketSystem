@@ -1199,15 +1199,23 @@ def api_unread_count():
 @login_required
 def api_mark_notification_read(notification_id):
     """Mark a notification as read"""
-    success = NotificationManager.mark_as_read(notification_id, current_user.id)
-    return jsonify({'success': success})
+    try:
+        success = NotificationManager.mark_as_read(notification_id, current_user.id)
+        return jsonify({'success': success})
+    except Exception as e:
+        print(f"Error marking notification as read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/notifications/mark_all_read', methods=['POST'])
 @login_required
 def api_mark_all_read():
     """Mark all notifications as read"""
-    count = NotificationManager.mark_all_as_read(current_user.id)
-    return jsonify({'success': True, 'marked_count': count})
+    try:
+        count = NotificationManager.mark_all_as_read(current_user.id)
+        return jsonify({'success': True, 'marked_count': count})
+    except Exception as e:
+        print(f"Error marking all notifications as read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/notifications/recent')
 @login_required

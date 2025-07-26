@@ -2316,6 +2316,17 @@ body, html {
 
 .notification-item:hover {
     background-color: rgba(0, 123, 255, 0.05) !important;
+    transform: translateX(2px);
+}
+
+.notification-item:active {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    transform: translateX(0);
+}
+
+.notification-item {
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
 }
 
 .notification-unread {

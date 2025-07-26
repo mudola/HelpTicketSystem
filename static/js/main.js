@@ -26,19 +26,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     const colorClass = getNotificationColor(notification.type);
 
                     notificationElement.innerHTML = `
-                        <a class="dropdown-item ${isNew}" href="#" onclick="handleNotificationClick(${notification.id}, '${notification.link || ''}')">
+                        <a class="dropdown-item ${isNew} notification-item" 
+                           href="#" 
+                           data-notification-id="${notification.id}" 
+                           data-notification-link="${notification.link || ''}"
+                           style="cursor: pointer;">
                             <div class="d-flex align-items-start">
                                 <div class="flex-shrink-0 me-3">
                                     <i class="fas fa-${iconClass} ${colorClass}"></i>
                                 </div>
                                 <div class="flex-grow-1">
                                     <h6 class="mb-1">${notification.title}</h6>
-                                    <p class="mb-1 small text-muted">${notification.message}</p>
+                                    <p class="mb-1 small text-muted">${notification.message.substring(0, 100)}${notification.message.length > 100 ? '...' : ''}</p>
                                     <small class="text-muted">${notification.created_at}</small>
                                 </div>
                             </div>
                         </a>
                     `;
+                    
+                    // Add click event listener
+                    const linkElement = notificationElement.querySelector('.dropdown-item');
+                    linkElement.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const notificationId = this.getAttribute('data-notification-id');
+                        const link = this.getAttribute('data-notification-link');
+                        handleNotificationClick(notificationId, link);
+                    });
+                    
                     notificationsList.appendChild(notificationElement);
                 });
             })
@@ -75,24 +89,42 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // Get CSRF token from meta tag or form
+    function getCSRFToken() {
+        const token = document.querySelector('meta[name=csrf-token]');
+        if (token) {
+            return token.getAttribute('content');
+        }
+        // Fallback: get from any form with csrf_token
+        const csrfInput = document.querySelector('input[name="csrf_token"]');
+        return csrfInput ? csrfInput.value : '';
+    }
+
     // Mark all as read
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            const csrfToken = getCSRFToken();
+            
             fetch('/api/notifications/mark_all_read', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
             }).then(response => response.json())
             .then(data => {
                 if (data.success) {
                     updateUnreadCount();
                     loadNotifications();
                     showNotification(`Marked ${data.marked_count} notifications as read`, 'success');
+                } else {
+                    console.error('Failed to mark notifications as read');
                 }
             }).catch(error => {
                 console.error('Error marking notifications as read:', error);
+                showNotification('Error marking notifications as read', 'danger');
             });
         });
     }
@@ -165,15 +197,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle notification click
     window.handleNotificationClick = function(notificationId, link) {
+        const csrfToken = getCSRFToken();
+        
         // Mark as read
         fetch(`/api/notifications/${notificationId}/mark_read`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({})
+        }).then(response => {
+            if (response.ok) {
+                updateUnreadCount();
+                loadNotifications();
             }
-        }).then(() => {
-            updateUnreadCount();
-            loadNotifications();
         }).catch(error => {
             console.error('Error marking notification as read:', error);
         });
